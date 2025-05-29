@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>TimePro HRM-Lập Báo Cáo Lương</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 0; }
+        .container { max-width: 1100px; margin: 30px auto; background: #fff; padding: 24px; border-radius: 8px; box-shadow: 0 2px 8px #0001; }
+        h2 { color: #1976d2; text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 18px; background: #fff; }
+        th, td { border: 1px solid #ccc; padding: 8px 10px; text-align: center; }
+        th { background: #e3f2fd; color: #1976d2; }
+        tfoot td { font-weight: bold; color: #1976d2; background: #f1f8e9; }
+        select { font-size: 16px; padding: 4px 12px; border-radius: 4px; }
+    </style>
+    <script src="menu.js"></script>
+    <script src="data_io.js"></script>
+</head>
+<body>
+    <script>renderMenu('payroll_report');</script>
+    <div class="container">
+        <h2>Lập Báo Cáo Lương</h2>
+        <div style="margin-bottom:18px;">
+            <label style="font-weight:500;color:#1976d2;">Chọn tháng: </label>
+            <input type="month" id="reportMonth" style="font-size:17px;padding:6px 16px;min-width:160px;border-radius:6px;">
+            <button onclick="renderPayrollReport()" style="margin-left:12px;padding:6px 18px;background:#1976d2;color:#fff;border:none;border-radius:4px;cursor:pointer;">Xem báo cáo</button>
+        </div>
+        <div id="payrollReportTable"></div>
+    </div>
+    <script>
+        function formatVND(val) {
+            if (isNaN(val)) return '';
+            return Number(val).toLocaleString('vi-VN') + ' ₫';
+        }
+        function parseCurrency(val) {
+            return Number((val+'').replace(/[^\d]/g, '')) || 0;
+        }
+        function getPayrollInput(empId, month, field, defaultVal) {
+            let payrollInputs = JSON.parse(localStorage.getItem('payrollInputs') || '{}');
+            return payrollInputs?.[empId]?.[month]?.[field] ?? defaultVal;
+        }
+        function renderPayrollReport() {
+            let employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            let attendanceByMonth = JSON.parse(localStorage.getItem('attendanceByMonth') || '{}');
+            let workDaysStd = parseInt(localStorage.getItem('workDaysStd') || '26');
+            let salaryPerDay = parseInt(localStorage.getItem('salaryPerDay') || '0');
+            let payrollInputs = JSON.parse(localStorage.getItem('payrollInputs') || '{}');
+            let shiftsByEmp = JSON.parse(localStorage.getItem('shiftsByEmp') || '{}');
+            let shiftsByEmpByMonth = JSON.parse(localStorage.getItem('shiftsByEmpByMonth') || '{}');
+            let month = document.getElementById('reportMonth').value;
+            if (!month) {
+                const now = new Date();
+                month = now.toISOString().slice(0,7);
+                document.getElementById('reportMonth').value = month;
+            }
+            let html = `<table>
+                <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Họ tên</th>
+                        <th>Ngày công / Số ca</th>
+                        <th>Phụ cấp</th>
+                        <th>Thưởng lễ</th>
+                        <th>Phạt</th>
+                        <th>Tổng lương</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+            let totalAll = 0;
+            employees.forEach((emp, idx) => {
+                let empAtt = (attendanceByMonth[month] && attendanceByMonth[month][emp.id]) || {};
+                // Lấy ngày công chuẩn và tiền công/ngày riêng cho từng nhân viên nếu có
+                let stdDays = parseInt(localStorage.getItem('workDaysStd_' + emp.id)) 
+                    || parseInt(localStorage.getItem('workDaysStd') || '26');
+                let perDayEmp = parseInt(localStorage.getItem('salaryPerDay_' + emp.id)) 
+                    || parseInt(localStorage.getItem('salaryPerDay') || '0');
+                let workdays = 0;
+                let extraShiftsVal = getPayrollInput(emp.id, month, 'extraShifts', 0);
+                let allowanceVal = getPayrollInput(emp.id, month, 'allowance', 0);
+                let bonusVal = getPayrollInput(emp.id, month, 'bonus', 0);
+                let penaltyVal = getPayrollInput(emp.id, month, 'penalty', 0);
+                let extraShifts = parseFloat((extraShiftsVal + '').replace(',', '.')) || 0;
+                let allowance = parseCurrency(allowanceVal);
+                let bonus = parseCurrency(bonusVal);
+                let penalty = parseCurrency(penaltyVal);
+                let extra = extraShifts * (perDayEmp || 0);
+
+                let total = 0;
+                workdays = 0; // <-- chỉ khai báo 1 lần ở đây
+                if (emp.salary_type === 'shift') {
+                    // Lấy ca/tháng đúng chuẩn
+                    let shifts = (shiftsByEmpByMonth[month] && shiftsByEmpByMonth[month][emp.id]) || [];
+                    let caCong = new Array(shifts.length).fill(0);
+                    for (let d in empAtt) {
+                        let arr = empAtt[d];
+                        if (Array.isArray(arr)) {
+                            arr.forEach(shiftIdx => {
+                                if (shifts[shiftIdx]) caCong[shiftIdx] += (shifts[shiftIdx].half ? 0.5 : 1);
+                            });
+                        }
+                    }
+                    let caSalaries = caCong.map((count, idx) => count * (parseInt(shifts[idx]?.salary) || 0));
+                    let totalCaSalary = caSalaries.reduce((a, b) => a + b, 0);
+                    total = totalCaSalary + allowance + bonus - penalty;
+                    workdays = caCong.reduce((a, b) => a + b, 0);
+                } else {
+                    // Đếm tổng công (bao gồm nửa ca nếu có)
+                    for (let d in empAtt) {
+                        let arr = empAtt[d];
+                        if (Array.isArray(arr) && arr.length > 0) {
+                            let shifts = shiftsByEmp[emp.id] || [];
+                            if (shifts.length > 0) {
+                                let sum = 0;
+                                arr.forEach(shiftIdx => {
+                                    sum += (shifts[shiftIdx]?.half ? 0.5 : 1);
+                                });
+                                workdays += sum;
+                            } else {
+                                workdays++;
+                            }
+                        }
+                    }
+                    let baseSalary = emp.base_salary || 0;
+                    let salary = 0;
+                    if (workdays >= stdDays) {
+                        // Nếu dư công thì cộng thêm số công dư * tiền 1 ngày công
+                        salary = baseSalary + ((workdays - stdDays) * (perDayEmp || 0));
+                    } else {
+                        salary = workdays * (perDayEmp || 0);
+                        if (salary > baseSalary) salary = baseSalary;
+                    }
+                    total = salary + extra + allowance + bonus - penalty;
+                    workdays = workdays + extraShifts;
+                }
+                if (total < 0) total = 0;
+                totalAll += total;
+                html += `<tr>
+                    <td>${idx+1}</td>
+                    <td>${emp.name}</td>
+                    <td>${workdays}</td>
+                    <td>${formatVND(allowance)}</td>
+                    <td>${formatVND(bonus)}</td>
+                    <td>${formatVND(penalty)}</td>
+                    <td style="font-weight:bold;color:#1976d2;">${formatVND(total)}</td>
+                </tr>`;
+            });
+            html += `</tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="6" style="text-align:right;">TỔNG LƯƠNG TOÀN BỘ:</td>
+                        <td style="font-weight:bold;font-size:18px;color:#388e3c;">${formatVND(totalAll)}</td>
+                    </tr>
+                </tfoot>
+            </table>`;
+            document.getElementById('payrollReportTable').innerHTML = html;
+        }
+        function exportAllData() {
+            const data = typeof getExportData === 'function' ? getExportData() : {};
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'qlnv_data.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        function importAllData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.employees && data.attendanceByMonth) {
+                        // Merge employees
+                        let oldEmployees = JSON.parse(localStorage.getItem('employees') || '[]');
+                        let newEmployees = data.employees || [];
+                        let empMap = {};
+                        oldEmployees.forEach(e => empMap[e.id] = e);
+                        newEmployees.forEach(e => empMap[e.id] = e);
+                        let mergedEmployees = Object.values(empMap);
+
+                        // Merge attendanceByMonth
+                        let oldAtt = JSON.parse(localStorage.getItem('attendanceByMonth') || '{}');
+                        let newAtt = data.attendanceByMonth || {};
+                        for (let month in newAtt) {
+                            if (!oldAtt[month]) oldAtt[month] = {};
+                            for (let empId in newAtt[month]) {
+                                if (!oldAtt[month][empId]) oldAtt[month][empId] = {};
+                                for (let day in newAtt[month][empId]) {
+                                    oldAtt[month][empId][day] = newAtt[month][empId][day];
+                                }
+                            }
+                        }
+
+                        // Merge shifts
+                        let oldShifts = JSON.parse(localStorage.getItem('shifts') || '[]');
+                        let newShifts = data.shifts || [];
+                        let shiftMap = {};
+                        oldShifts.forEach(s => shiftMap[s.id] = s);
+                        newShifts.forEach(s => shiftMap[s.id] = s);
+                        let mergedShifts = Object.values(shiftMap);
+
+                        // Merge shiftsByEmp
+                        let oldShiftsByEmp = JSON.parse(localStorage.getItem('shiftsByEmp') || '{}');
+                        let newShiftsByEmp = data.shiftsByEmp || {};
+                        for (let empId in newShiftsByEmp) {
+                            if (!oldShiftsByEmp[empId]) oldShiftsByEmp[empId] = [];
+                            let oldArr = oldShiftsByEmp[empId];
+                            let newArr = newShiftsByEmp[empId];
+                            for (let i = 0; i < newArr.length; ++i) {
+                                let exists = oldArr.some(s =>
+                                    s.name === newArr[i].name &&
+                                    s.start === newArr[i].start &&
+                                    s.end === newArr[i].end &&
+                                    s.salary === newArr[i].salary
+                                );
+                                if (!exists) oldArr.push(newArr[i]);
+                            }
+                        }
+
+                        // Merge workDaysStd & salaryPerDay (ưu tiên giữ giá trị lớn nhất)
+                        let workDaysStd = Math.max(
+                            parseInt(localStorage.getItem('workDaysStd') || '26'),
+                            parseInt(data.workDaysStd || '26')
+                        );
+                        let salaryPerDay = Math.max(
+                            parseInt(localStorage.getItem('salaryPerDay') || '0'),
+                            parseInt(data.salaryPerDay || '0')
+                        );
+
+                        // Save merged data
+                        localStorage.setItem('employees', JSON.stringify(mergedEmployees));
+                        localStorage.setItem('attendanceByMonth', JSON.stringify(oldAtt));
+                        localStorage.setItem('shifts', JSON.stringify(mergedShifts));
+                        localStorage.setItem('shiftsByEmp', JSON.stringify(oldShiftsByEmp));
+                        localStorage.setItem('workDaysStd', workDaysStd.toString());
+                        localStorage.setItem('salaryPerDay', salaryPerDay.toString());
+
+                        // Áp dụng lại workDaysStdByEmp và salaryPerDayByEmp nếu có
+                        if (data.workDaysStdByEmp) {
+                            Object.keys(data.workDaysStdByEmp).forEach(empId => {
+                                localStorage.setItem('workDaysStd_' + empId, data.workDaysStdByEmp[empId]);
+                            });
+                        }
+                        if (data.salaryPerDayByEmp) {
+                            Object.keys(data.salaryPerDayByEmp).forEach(empId => {
+                                localStorage.setItem('salaryPerDay_' + empId, data.salaryPerDayByEmp[empId]);
+                            });
+                        }
+
+                        // Merge notes nếu có
+                        if (data.notes) {
+                            Object.keys(localStorage).forEach(k => {
+                                if (k.startsWith('note_')) localStorage.removeItem(k);
+                            });
+                            for (let k in data.notes) {
+                                localStorage.setItem(k, data.notes[k]);
+                            }
+                        }
+
+                        alert('Nhập dữ liệu thành công! Trang sẽ được tải lại.');
+                        if (typeof autoSendDataToTelegramBot === 'function') autoSendDataToTelegramBot();
+                        location.reload();
+                    } else {
+                        alert('File không đúng định dạng!');
+                    }
+                } catch (err) {
+                    alert('Lỗi khi đọc file dữ liệu!');
+                }
+            };
+            reader.readAsText(file);
+        }
+        // Tự động hiển thị báo cáo khi vào trang
+        window.onload = function() {
+            const now = new Date();
+            const month = now.toISOString().slice(0,7);
+            document.getElementById('reportMonth').value = month;
+            renderPayrollReport();
+            // Thêm sự kiện onchange để xem báo cáo ngay khi đổi tháng
+            document.getElementById('reportMonth').addEventListener('change', renderPayrollReport);
+        }
+    </script>
+    <script src="footer.js"></script>
+    <script>renderFooter();</script>
+</body>
+</html>

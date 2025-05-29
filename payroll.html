@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>TimePro HRM-Bảng lương</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 0; }
+        .container { max-width: 1000px; margin: 30px auto; background: #fff; padding: 24px; border-radius: 8px; box-shadow: 0 2px 8px #0001; }
+        h2 { color: #1976d2; }
+        .employee-payroll-block {
+            border: 2px solid #1976d2;
+            border-radius: 10px;
+            margin-bottom: 32px;
+            padding: 18px 20px 14px 20px;
+            background: #f5faff;
+            box-shadow: 0 2px 8px #1976d210;
+            position: relative;
+        }
+        .employee-payroll-header {
+            font-weight: bold;
+            font-size: 20px;
+            color: #1976d2;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .employee-payroll-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px 24px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .employee-payroll-form label {
+            min-width: 70px;
+            color: #333;
+            font-weight: 500;
+        }
+        .employee-payroll-form input[type="text"], .employee-payroll-form input[type="number"], .employee-payroll-form input[type="month"] {
+            width: 100px;
+            padding: 4px 6px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        .employee-payroll-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+        }
+        .employee-payroll-table th, .employee-payroll-table td {
+            border: 1px solid #ccc;
+            padding: 8px 10px;
+            text-align: center;
+        }
+        .employee-payroll-table th {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        .note-icon {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            background: #fff3cd;
+            color: #b8860b;
+            border-radius: 50%;
+            border: 1.5px solid #ffc107;
+            text-align: center;
+            font-weight: bold;
+            font-size: 15px;
+            line-height: 16px;
+            cursor: pointer;
+            margin-left: 4px;
+            position: relative;
+        }
+        .note-tooltip {
+            display: none;
+            position: absolute;
+            left: 22px;
+            top: 0;
+            background: #fffbe8;
+            color: #333;
+            border: 1px solid #ffc107;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 13px;
+            min-width: 220px;
+            z-index: 10;
+            box-shadow: 0 2px 8px #ffc10730;
+        }
+        .note-icon:hover + .note-tooltip, .note-icon:focus + .note-tooltip {
+            display: block;
+        }
+        @media (max-width: 700px) {
+            .employee-payroll-form { flex-direction: column; gap: 10px; }
+            .container { padding: 8px; }
+        }
+    </style>
+    <script src="menu.js"></script>
+    <script src="data_io.js"></script>
+    <script src="footer.js"></script>
+</head>
+<body>
+    <script>renderMenu('payroll');</script>
+    <div class="container">
+        <h2>Bảng lương tháng</h2>
+        <div style="margin-bottom:18px;">
+            <label style="font-weight:500;color:#1976d2;">Chọn nhân viên: </label>
+            <select id="payrollEmpSelect" style="font-size:17px;padding:6px 16px;min-width:200px;border-radius:6px;" onchange="calcPayroll()"></select>
+        </div>
+        <div id="payrollTableWrap"></div>
+    </div>
+    <script>
+        let employees = JSON.parse(localStorage.getItem('employees') || '[]');
+        let attendanceByMonth = JSON.parse(localStorage.getItem('attendanceByMonth') || '{}');
+        let workDaysStd = parseInt(localStorage.getItem('workDaysStd') || '26');
+        let salaryPerDay = parseInt(localStorage.getItem('salaryPerDay') || '0');
+        let payrollInputs = JSON.parse(localStorage.getItem('payrollInputs') || '{}');
+
+        function renderPayrollEmpSelect() {
+            const sel = document.getElementById('payrollEmpSelect');
+            const savedEmpId = localStorage.getItem('payroll_selectedEmpId');
+            sel.innerHTML = employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+            if (savedEmpId && employees.some(e => e.id === savedEmpId)) {
+                sel.value = savedEmpId;
+            }
+        }
+
+        document.getElementById('payrollEmpSelect').addEventListener('change', function() {
+            localStorage.setItem('payroll_selectedEmpId', this.value);
+            calcPayroll();
+        });
+
+        function savePayrollInput(empId, month, field, value) {
+            if (!payrollInputs[empId]) payrollInputs[empId] = {};
+            if (!payrollInputs[empId][month]) payrollInputs[empId][month] = {};
+            payrollInputs[empId][month][field] = value;
+            localStorage.setItem('payrollInputs', JSON.stringify(payrollInputs));
+            if (typeof autoSendDataToTelegramBot === 'function') autoSendDataToTelegramBot();
+        }
+
+        function getPayrollInput(empId, month, field, defaultVal) {
+            return payrollInputs?.[empId]?.[month]?.[field] ?? defaultVal;
+        }
+
+        // Thêm hàm lấy tổng công giống bảng chấm công (dùng từ data_io.js nếu đã có)
+        function getTongCong(empId, month) {
+            const attendanceByMonth = JSON.parse(localStorage.getItem('attendanceByMonth') || '{}');
+            const shiftsByEmpByMonth = JSON.parse(localStorage.getItem('shiftsByEmpByMonth') || '{}');
+            let total = 0;
+            if (
+                attendanceByMonth[month] &&
+                attendanceByMonth[month][empId] &&
+                shiftsByEmpByMonth[month] &&
+                shiftsByEmpByMonth[month][empId]
+            ) {
+                const empAtt = attendanceByMonth[month][empId];
+                const shifts = shiftsByEmpByMonth[month][empId];
+                Object.keys(empAtt).forEach(day => {
+                    let arr = empAtt[day];
+                    if (Array.isArray(arr)) {
+                        arr.forEach(shiftIdx => {
+                            if (typeof shifts[shiftIdx] !== 'undefined') {
+                                total += shifts[shiftIdx].half ? 0.5 : 1;
+                            }
+                        });
+                    }
+                });
+            }
+            return total;
+        }
+
+        // Lấy đúng dữ liệu TC/LT, Phụ cấp, Thưởng lễ, Phạt theo từng tháng
+        function getPayrollInputByMonth(empId, month, field, defaultVal) {
+            let payrollInputs = JSON.parse(localStorage.getItem('payrollInputs') || '{}');
+            return payrollInputs?.[empId]?.[month]?.[field] ?? defaultVal;
+        }
+
+        function calcPayroll() {
+            let perDay = salaryPerDay;
+            let html = '';
+            const empId = document.getElementById('payrollEmpSelect')?.value || (employees[0]?.id || '');
+            const filteredEmps = employees.filter(e => e.id == empId);
+            filteredEmps.forEach(emp => {
+                let monthVal = document.getElementById('payrollMonth_' + emp.id)?.value || getEmpMonth(emp.id);
+
+                // Lấy giá trị từng tháng từ localStorage (không lấy từ biến payrollInputs cũ)
+                let extraShiftsVal = getPayrollInputByMonth(emp.id, monthVal, 'extraShifts', 0);
+                let allowanceVal = getPayrollInputByMonth(emp.id, monthVal, 'allowance', 0);
+                let bonusVal = getPayrollInputByMonth(emp.id, monthVal, 'bonus', 0);
+                let penaltyVal = getPayrollInputByMonth(emp.id, monthVal, 'penalty', 0);
+
+                html += `<div class="employee-payroll-block">`;
+                html += `<div class="employee-payroll-header">
+                    ${emp.name} - Bảng lương tháng 
+                    <input type="month" id="payrollMonth_${emp.id}" value="${monthVal}" onchange="calcPayroll()" style="width:140px;">
+                </div>`;
+                html += `<form class="employee-payroll-form" onsubmit="return false;">
+                    <label>TC/LT:
+                        <input type="text" id="payrollExtraShifts_${emp.id}" value="${extraShiftsVal}" 
+                            onblur="savePayrollInput('${emp.id}','${monthVal}','extraShifts',this.value);calcPayroll()" 
+                            inputmode="decimal" autocomplete="off">
+                        <span class="note-icon" tabindex="0">!
+                        </span>
+                        <span class="note-tooltip">Áp dụng cho trường hợp tăng ca hoặc làm giùm (có thể nhập 0.5, 1 hoặc 0,5...)</span>
+                    </label>
+                    <label>Phụ cấp:
+                        <input type="text" id="payrollAllowance_${emp.id}" value="${allowanceVal}" 
+                            oninput="formatCurrencyLiveInput(this)" 
+                            onblur="formatCurrencyLiveInput(this);savePayrollInput('${emp.id}','${monthVal}','allowance',this.value);calcPayroll()">
+                        <span class="note-icon" tabindex="0">!</span>
+                        <span class="note-tooltip">Nhập tổng số tiền phụ cấp thêm cho nhân viên trong tháng này (ví dụ: xăng xe, điện thoại...)</span>
+                    </label>
+                    <label>Thưởng lễ:
+                        <input type="text" id="payrollBonus_${emp.id}" value="${bonusVal}" 
+                            oninput="formatCurrencyLiveInput(this)" 
+                            onblur="formatCurrencyLiveInput(this);savePayrollInput('${emp.id}','${monthVal}','bonus',this.value);calcPayroll()">
+                        <span class="note-icon" tabindex="0">!</span>
+                        <span class="note-tooltip">Nhập số tiền thưởng lễ, thưởng thêm cho nhân viên trong tháng này (nếu có)</span>
+                    </label>
+                    <label>Phạt:
+                        <input type="text" id="payrollPenalty_${emp.id}" value="${penaltyVal}" 
+                            oninput="formatCurrencyLiveInput(this)" 
+                            onblur="formatCurrencyLiveInput(this);savePayrollInput('${emp.id}','${monthVal}','penalty',this.value);calcPayroll()">
+                        <span class="note-icon" tabindex="0">!</span>
+                        <span class="note-tooltip">Nhập tổng số tiền phạt (nếu có) cho nhân viên trong tháng này</span>
+                    </label>
+                </form>`;
+                let month = monthVal;
+                // Lấy ngày công chuẩn và tiền công/ngày riêng cho từng nhân viên nếu có
+                let stdDays = parseInt(localStorage.getItem('workDaysStd_' + emp.id)) 
+                    || parseInt(localStorage.getItem('workDaysStd') || '26');
+                let perDayEmp = parseInt(localStorage.getItem('salaryPerDay_' + emp.id)) 
+                    || parseInt(localStorage.getItem('salaryPerDay') || '0');
+                let empAtt = (attendanceByMonth[month] && attendanceByMonth[month][emp.id]) || {};
+                let extraShifts = parseFloat((extraShiftsVal + '').replace(',', '.')) || 0;
+                let allowance = parseCurrency(allowanceVal);
+                let bonus = parseCurrency(bonusVal);
+                let penalty = parseCurrency(penaltyVal);
+                let extra = extraShifts * (perDayEmp || 0);
+
+                // --- SỬA ĐOẠN NÀY ---
+                // Lấy tổng công đúng chuẩn từ bảng chấm công
+                let tongCong = getTongCong(emp.id, monthVal);
+
+                if (emp.salary_type === 'shift') {
+                    let shiftsByEmpByMonth = JSON.parse(localStorage.getItem('shiftsByEmpByMonth') || '{}');
+                    let shifts = (shiftsByEmpByMonth[month] && shiftsByEmpByMonth[month][emp.id]) || [];
+                    if (!Array.isArray(shifts) || shifts.length === 0) {
+                        html += `<div style="color:#d32f2f;font-weight:bold;margin-bottom:12px;">Chưa có dữ liệu ca cho tháng này.</div>`;
+                    } else {
+                        let caCong = new Array(shifts.length).fill(0);
+                        for (let d in empAtt) {
+                            let arr = empAtt[d];
+                            if (Array.isArray(arr)) {
+                                arr.forEach(shiftIdx => {
+                                    if (shifts[shiftIdx]) caCong[shiftIdx] += (shifts[shiftIdx].half ? 0.5 : 1);
+                                });
+                            }
+                        }
+                        let caSalaries = caCong.map((count, idx) => count * (parseInt(shifts[idx]?.salary) || 0));
+                        let totalCa = caCong.reduce((a, b) => a + b, 0);
+                        let totalCaSalary = caSalaries.reduce((a, b) => a + b, 0);
+                        let total = totalCaSalary + allowance + bonus - penalty;
+
+                        if (totalCa === 0) {
+                            html += `<div style="color:#d32f2f;font-weight:bold;margin-bottom:12px;">Chưa có công trong tháng này.</div>`;
+                        } else {
+                            html += `<table class="employee-payroll-table" style="margin-bottom:12px;">
+                                <thead>
+                                    <tr>
+                                        <th>Ca làm việc</th>
+                                        <th>Số ca</th>
+                                        <th>Lương ca</th>
+                                        <th>Thành tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+                            shifts.forEach((shift, idx) => {
+                                if (caCong[idx] > 0) {
+                                    html += `<tr>
+                                        <td>${shift.name || ('Ca ' + (idx + 1))}</td>
+                                        <td>${caCong[idx]}</td>
+                                        <td>${formatVND(parseInt(shift.salary) || 0)}</td>
+                                        <td>${formatVND(caSalaries[idx])}</td>
+                                    </tr>`;
+                                }
+                            });
+                            // Dòng tổng hợp cuối bảng
+                            html += `<tr style="font-weight:bold;background:#e3f2fd;">
+                                <td>Tổng</td>
+                                <td>${totalCa}</td>
+                                <td></td>
+                                <td>${formatVND(totalCaSalary)}</td>
+                            </tr>
+                            <tr style="font-weight:bold;">
+                                <td colspan="2">Phụ cấp</td>
+                                <td colspan="2">${formatVND(allowance)}</td>
+                            </tr>
+                            <tr style="font-weight:bold;">
+                                <td colspan="2">Thưởng lễ</td>
+                                <td colspan="2">${formatVND(bonus)}</td>
+                            </tr>
+                            <tr style="font-weight:bold;">
+                                <td colspan="2">Phạt</td>
+                                <td colspan="2">${formatVND(penalty)}</td>
+                            </tr>
+                            <tr style="font-weight:bold;color:#1976d2;">
+                                <td colspan="2">Lương thực nhận</td>
+                                <td colspan="2">${formatVND(total)}</td>
+                            </tr>
+                            </tbody>
+                            </table>`;
+                        }
+                    }
+                } else {
+                    // Đếm tổng công (bao gồm nửa ca nếu có)
+                    let workdays = 0;
+                    for (let d in empAtt) {
+                        let arr = empAtt[d];
+                        if (Array.isArray(arr) && arr.length > 0) {
+                            // Nếu có shiftsByEmp thì cộng theo nửa ca, nếu không thì mỗi ngày 1 công
+                            let shiftsByEmp = JSON.parse(localStorage.getItem('shiftsByEmp') || '{}');
+                            let shifts = shiftsByEmp[emp.id] || [];
+                            if (shifts.length > 0) {
+                                let sum = 0;
+                                arr.forEach(shiftIdx => {
+                                    sum += (shifts[shiftIdx]?.half ? 0.5 : 1);
+                                });
+                                workdays += sum;
+                            } else {
+                                workdays++;
+                            }
+                        }
+                    }
+                    let baseSalary = emp.base_salary || 0;
+                    let salary = 0;
+                    if (workdays >= stdDays) {
+                        // Nếu dư công thì cộng thêm số công dư * tiền 1 ngày công
+                        salary = baseSalary + ((workdays - stdDays) * (perDayEmp || 0));
+                    } else {
+                        salary = workdays * (perDayEmp || 0);
+                        if (salary > baseSalary) salary = baseSalary;
+                    }
+                    let total = salary + extra + allowance + bonus - penalty;
+                    let displayWorkdays = tongCong + extraShifts;
+                    let baseSalaryLabel = `${formatVND(baseSalary)} <span style="font-size:12px;color:#888">(Tháng)</span>`;
+                    html += `<table class="employee-payroll-table">
+                        <thead>
+                            <tr>
+                                <th>Ngày công</th>
+                                <th>Lương cơ bản</th>
+                                <th>Phụ cấp</th>
+                                <th>Thưởng lễ</th>
+                                <th>Phạt</th>
+                                <th>Lương thực nhận</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>${displayWorkdays}</td>
+                                <td>${baseSalaryLabel}</td>
+                                <td>${formatVND(allowance)}</td>
+                                <td>${formatVND(bonus)}</td>
+                                <td>${formatVND(penalty)}</td>
+                                <td style="font-weight:bold;color:#1976d2;">${formatVND(total)}</td>
+                            </tr>
+                        </tbody>
+                    </table>`;
+                }
+                html += `</div>`;
+            });
+            document.getElementById('payrollTableWrap').innerHTML = html;
+        }
+
+        function getEmpMonth(empId) {
+            // Lấy tháng hiện tại theo ISO nếu chưa có input
+            const now = new Date();
+            return now.toISOString().slice(0,7);
+        }
+        function formatVND(val) {
+            if (isNaN(val)) return '';
+            return Number(val).toLocaleString('vi-VN') + ' ₫';
+        }
+        function parseCurrency(val) {
+            return Number((val+'').replace(/[^\d]/g, '')) || 0;
+        }
+        function formatCurrencyInput(input) {
+            let value = input.value.replace(/[^\d]/g, '');
+            if (!value) value = '0';
+            input.value = Number(value).toLocaleString('vi-VN');
+        }
+        function formatCurrencyLiveInput(input) {
+            let value = input.value.replace(/[^\d]/g, '');
+            if (!value) value = '0';
+            input.value = Number(value).toLocaleString('vi-VN') + ' ₫';
+        }
+        function exportAllData() {
+            const data = typeof getExportData === 'function' ? getExportData() : {};
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'qlnv_data.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        function importAllData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    // Xóa dữ liệu cũ
+                    localStorage.clear();
+                    // Lưu dữ liệu mới
+                    Object.keys(data).forEach(key => {
+                        localStorage.setItem(key, JSON.stringify(data[key]));
+                    });
+                    // Áp dụng lại workDaysStdByEmp và salaryPerDayByEmp nếu có
+                    if (data.workDaysStdByEmp) {
+                        Object.keys(data.workDaysStdByEmp).forEach(empId => {
+                            localStorage.setItem('workDaysStd_' + empId, data.workDaysStdByEmp[empId]);
+                        });
+                    }
+                    if (data.salaryPerDayByEmp) {
+                        Object.keys(data.salaryPerDayByEmp).forEach(empId => {
+                            localStorage.setItem('salaryPerDay_' + empId, data.salaryPerDayByEmp[empId]);
+                        });
+                    }
+                    alert('Nhập dữ liệu thành công! Trang sẽ được tải lại.');
+                    if (typeof autoSendDataToTelegramBot === 'function') autoSendDataToTelegramBot();
+                    location.reload();
+                } catch (error) {
+                    console.error('Lỗi khi nhập dữ liệu:', error);
+                    alert('Lỗi khi nhập dữ liệu. Vui lòng kiểm tra tệp tin và thử lại.');
+                }
+            };
+            reader.readAsText(file);
+        }
+        (function(){
+            renderPayrollEmpSelect();
+            calcPayroll();
+        })();
+        if(typeof renderFooter==='function')renderFooter();
+    </script>
+</body>
+</html>
