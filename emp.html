@@ -423,7 +423,11 @@
                         localStorage.setItem('shiftsByEmpByMonth', JSON.stringify(oldShiftsByEmpByMonth));
                         localStorage.setItem('workDaysStd', workDaysStd.toString());
                         localStorage.setItem('salaryPerDay', salaryPerDay.toString());
-
+                        // Thêm các dòng sau để đồng bộ lịch làm việc
+                        if (data.workSchedules) localStorage.setItem('workSchedules', JSON.stringify(data.workSchedules));
+                        if (data.scheduleShiftsByMonth) localStorage.setItem('scheduleShiftsByMonth', JSON.stringify(data.scheduleShiftsByMonth));
+                        if (data.workScheduleWeekTemplate) localStorage.setItem('workScheduleWeekTemplate', JSON.stringify(data.workScheduleWeekTemplate));
+                        if (data.workScheduleWeekNames) localStorage.setItem('workScheduleWeekNames', JSON.stringify(data.workScheduleWeekNames));
                         // Merge notes nếu có
                         if (data.notes) {
                             Object.keys(localStorage).forEach(k => {

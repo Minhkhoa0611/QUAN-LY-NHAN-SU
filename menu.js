@@ -177,6 +177,11 @@ function getExportData() {
                 if (k.startsWith('note_')) notes[k] = localStorage.getItem(k);
             });
             return notes;
-        })()
+        })(),
+        // Thêm các dòng sau để xuất lịch làm việc và ca mẫu lịch làm việc
+        workSchedules: JSON.parse(localStorage.getItem('workSchedules') || '{}'),
+        scheduleShiftsByMonth: JSON.parse(localStorage.getItem('scheduleShiftsByMonth') || '{}'),
+        workScheduleWeekTemplate: JSON.parse(localStorage.getItem('workScheduleWeekTemplate') || '{}'),
+        workScheduleWeekNames: JSON.parse(localStorage.getItem('workScheduleWeekNames') || '{}')
     };
 }

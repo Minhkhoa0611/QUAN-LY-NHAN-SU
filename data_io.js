@@ -55,7 +55,12 @@ function getExportData() {
             return notes;
         })(),
         workDaysStdByEmp,
-        salaryPerDayByEmp
+        salaryPerDayByEmp,
+        // Thêm các dòng sau để xuất lịch làm việc và ca mẫu lịch làm việc
+        workSchedules: JSON.parse(localStorage.getItem('workSchedules') || '{}'),
+        scheduleShiftsByMonth: JSON.parse(localStorage.getItem('scheduleShiftsByMonth') || '{}'),
+        workScheduleWeekTemplate: JSON.parse(localStorage.getItem('workScheduleWeekTemplate') || '{}'),
+        workScheduleWeekNames: JSON.parse(localStorage.getItem('workScheduleWeekNames') || '{}')
     };
 }
 
@@ -150,6 +155,10 @@ function importAllData(jsonData) {
                 localStorage.setItem('salaryPerDay_' + empId, data.salaryPerDayByEmp[empId]);
             });
         }
+        if (data.workSchedules) localStorage.setItem('workSchedules', JSON.stringify(data.workSchedules));
+        if (data.scheduleShiftsByMonth) localStorage.setItem('scheduleShiftsByMonth', JSON.stringify(data.scheduleShiftsByMonth));
+        if (data.workScheduleWeekTemplate) localStorage.setItem('workScheduleWeekTemplate', JSON.stringify(data.workScheduleWeekTemplate));
+        if (data.workScheduleWeekNames) localStorage.setItem('workScheduleWeekNames', JSON.stringify(data.workScheduleWeekNames));
         // Sau khi nhập xong có thể reload lại trang hoặc cập nhật giao diện nếu cần
 
         // Phát tín hiệu đồng bộ cho các tab khác
@@ -306,3 +315,30 @@ window.addEventListener('storage', function(e) {
         // Thêm các hàm render khác nếu có
     }
 });
+
+// Xuất lịch làm việc theo từng nhân viên (dạng JSON)
+function exportWorkScheduleJsonByEmployee() {
+    const workSchedules = JSON.parse(localStorage.getItem('workSchedules') || '{}');
+    const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+    let result = {};
+    for (let month in workSchedules) {
+        for (let empId in workSchedules[month]) {
+            let emp = employees.find(e => e.id == empId);
+            let empName = emp ? emp.name : empId;
+            if (!result[empName]) result[empName] = {};
+            result[empName][month] = workSchedules[month][empId];
+        }
+    }
+    const jsonStr = JSON.stringify(result, null, 2);
+    const blob = new Blob([jsonStr], {type: "application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'work_schedules_by_employee.json';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 100);
+}
