@@ -499,7 +499,9 @@
                     let salary = rowWork * caSalary;
                     caSalaries[s] = salary;
                     html += `<td>${rowWork}</td>`;
-                    // Chỉ hiển thị Tổng công, Lương từng ca, Lương thực nhận ở dòng cuối cùng, các dòng khác để trống
+                    // Hiển thị lương từng ca ở mỗi hàng
+                    html += `<td>${formatVND(salary)}</td>`;
+                    // Chỉ hiển thị Tổng công và Lương thực nhận ở dòng cuối cùng, các dòng khác để trống
                     if (s === numShifts - 1) {
                         let totalCa = caCong.reduce((a, b) => a + b, 0);
                         let totalSalary = 0;
@@ -518,10 +520,9 @@
                             totalSalary = salary;
                         }
                         html += `<td>${totalCa}</td>`;
-                        html += `<td>${formatVND(salary)}</td>`;
                         html += `<td>${formatVND(totalSalary)}</td>`;
                     } else {
-                        html += `<td></td><td></td><td></td>`;
+                        html += `<td></td><td></td>`;
                     }
                     html += `</tr>`;
                 }
