@@ -88,6 +88,7 @@ function renderMenu(active) {
         <button onclick="location.href='att.html'"${active==='att'?' class="active"':''}>Chấm công</button>
         <button onclick="location.href='payroll.html'"${active==='payroll'?' class="active"':''}>Bảng lương</button>
         <button onclick="location.href='payroll_report.html'"${active==='payroll_report'?' class="active"':''}>Lập BC Lương</button>
+        <button onclick="location.href='about-mksof.html'"${active==='about'?' class="active"':''}>Giới thiệu</button>
         <button onclick="exportAllData()" class="menu-export-btn"${active==='export'?' class="active"':''}>Xuất dữ liệu</button>
         <button type="button" class="menu-import-btn" onclick="document.getElementById('importDataInput').click()">Nhập dữ liệu</button>
         <input id="importDataInput" type="file" accept=".json" onchange="importAllData && importAllData(event)">

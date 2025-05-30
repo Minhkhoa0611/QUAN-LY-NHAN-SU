@@ -6,39 +6,46 @@ function renderFooter() {
     // Tạo phần tử footer
     const footer = document.createElement('footer');
     footer.id = 'mk-footer';
-    footer.style.background = '#1976d2';
+    footer.style.background = 'linear-gradient(90deg, #0f2027 0%, #1976d2 60%, #43a047 100%)';
     footer.style.color = '#fff';
     footer.style.textAlign = 'center';
-    footer.style.padding = '24px 10px 18px 10px';
-    footer.style.fontSize = '16px';
-    footer.style.marginTop = '40px';
-    footer.style.borderTopLeftRadius = '18px';
-    footer.style.borderTopRightRadius = '18px';
-    footer.style.boxShadow = '0 -2px 8px #0002';
+    footer.style.padding = '38px 10px 26px 10px';
+    footer.style.fontSize = '17px';
+    footer.style.marginTop = '48px';
+    footer.style.borderTopLeftRadius = '22px';
+    footer.style.borderTopRightRadius = '22px';
+    footer.style.boxShadow = '0 -4px 24px #1976d250';
 
-    // Nội dung chính
-    const mainDiv = document.createElement('div');
-    mainDiv.innerHTML = '<b style="color:#ffd600;">TimePro HRM – Giải pháp chấm công & nhân sự</b>';
-    footer.appendChild(mainDiv);
+    // Logo & tên tổ chức
+    const logoDiv = document.createElement('div');
+    logoDiv.innerHTML = `
+        <img src="iconlogo.png" alt="MK SOF" style="width:62px;height:62px;border-radius:16px;box-shadow:0 2px 12px #0005;background:#fff;margin-bottom:10px;">
+        <div style="font-size:2rem;font-weight:900;letter-spacing:2.5px;color:#ffd600;margin-bottom:2px;text-shadow:0 2px 12px #0008;">
+            MK SOF TECH GROUP
+        </div>
+        <div style="font-size:1.13rem;font-weight:700;opacity:0.98;color:#fffde7;letter-spacing:1px;">
+            Next-Gen Software & AI Solutions
+        </div>
+        <div style="font-size:1.08rem;font-weight:500;opacity:0.92;">
+            Tập Đoàn Công Nghệ & Giải Pháp Phần Mềm MK SOF
+        </div>
+        <div style="font-size:1.02rem;font-weight:400;opacity:0.85;color:#b3e5fc;">
+            MK SOF Tech Group - Software & AI Innovation
+        </div>
+    `;
+    footer.appendChild(logoDiv);
 
+    // Slogan
     const sloganDiv = document.createElement('div');
-    sloganDiv.textContent = 'Tối ưu hóa nguồn nhân lực, nâng tầm doanh nghiệp.';
+    sloganDiv.style.margin = '14px 0 10px 0';
+    sloganDiv.style.fontSize = '1.13rem';
+    sloganDiv.style.fontWeight = '700';
+    sloganDiv.style.color = '#ffd600';
+    sloganDiv.style.textShadow = '0 2px 8px #0005';
+    sloganDiv.innerHTML = '🚀 Đồng hành chuyển đổi số & bứt phá cùng doanh nghiệp Việt!';
     footer.appendChild(sloganDiv);
 
-    // Thông tin liên hệ
-    const contactDiv = document.createElement('div');
-    contactDiv.className = 'footer-contact';
-    contactDiv.style.marginTop = '10px';
-    contactDiv.style.fontSize = '15px';
-    contactDiv.style.color = '#e3f0ff';
-    contactDiv.innerHTML = `
-        <div>Liên hệ</div>
-        <div>📍 Trụ sở chính: Ninh Hòa, Khánh Hòa</div>
-        <div>📞 Hotline: 0867 544 809</div>
-        <div>📧 Email: khoaminhtran9@gmail.com</div>
-    `;
-    footer.appendChild(contactDiv);
-
+    // Không còn thông tin liên hệ chi tiết
     // Thêm vào cuối body
     document.body.appendChild(footer);
 }
