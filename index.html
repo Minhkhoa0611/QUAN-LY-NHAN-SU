@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
     <meta charset="utf-8">
     <title>TimePro HRM - Giải Pháp Chấm Công & Nhân Sự</title>
@@ -10,17 +10,23 @@
             margin: 0;
             min-height: 100vh;
             font-family: 'Segoe UI', Arial, sans-serif;
-            background: linear-gradient(135deg, #1976d2 0%, #43a047 100%);
+            background: linear-gradient(135deg, #e3f0ff 0%, #f7f7f7 100%);
             color: #222;
         }
-        .hero-section {
-            max-width: 900px;
-            margin: 48px auto 0 auto;
-            background: rgba(255,255,255,0.97);
-            border-radius: 22px;
+        .main-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 12px 40px 12px;
+        }
+        .hero {
+            background: linear-gradient(120deg, #1976d2 60%, #43a047 100%);
+            border-radius: 24px;
             box-shadow: 0 8px 40px #1976d250, 0 2px 8px #0001;
-            padding: 44px 36px 36px 36px;
+            padding: 48px 36px 36px 36px;
             text-align: center;
+            margin-top: 48px;
+            margin-bottom: 36px;
+            color: #fff;
             position: relative;
             overflow: hidden;
         }
@@ -32,36 +38,26 @@
             margin-bottom: 18px;
             background: #fff;
             object-fit: contain;
-        }
-        .version-label {
-            color: #fff;
-            background: #1976d2;
-            padding: 4px 16px;
-            border-radius: 16px;
-            display: inline-block;
-            font-size: 1rem;
-            font-weight: 600;
-            box-shadow: 0 2px 8px #1976d230;
-            margin-bottom: 12px;
+            border: 4px solid #fff;
         }
         .hero-title {
-            font-size: 2.5rem;
+            font-size: 2.6rem;
             font-weight: 800;
-            color: #1976d2;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             letter-spacing: 1.5px;
             text-shadow: 0 2px 12px #1976d220;
         }
         .hero-slogan {
-            font-size: 1.25rem;
-            color: #43a047;
+            font-size: 1.35rem;
+            color: #ffe082;
             font-weight: 600;
             margin-bottom: 22px;
             letter-spacing: 1px;
+            text-shadow: 0 2px 8px #1976d220;
         }
         .hero-desc {
-            font-size: 1.12rem;
-            color: #333;
+            font-size: 1.15rem;
+            color: #e3f0ff;
             margin-bottom: 28px;
             line-height: 1.7;
             max-width: 700px;
@@ -72,23 +68,28 @@
             display: flex;
             justify-content: center;
             gap: 32px;
-            margin: 24px 0 32px 0;
+            margin: 0 0 38px 0;
             flex-wrap: wrap;
         }
         .plan-card {
-            background: #f5faff;
-            border-radius: 14px;
-            box-shadow: 0 2px 12px #1976d210;
-            padding: 28px 28px 22px 28px;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 2px 16px #1976d210;
+            padding: 32px 28px 26px 28px;
             min-width: 260px;
-            max-width: 320px;
+            max-width: 340px;
             flex: 1 1 260px;
             text-align: left;
-            border: 2.5px solid #1976d2;
+            border: 2.5px solid #e3f0ff;
             position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
+            transition: box-shadow 0.18s, transform 0.18s;
+        }
+        .plan-card:hover {
+            box-shadow: 0 8px 32px #1976d230;
+            transform: translateY(-4px) scale(1.03);
         }
         .plan-card.pro {
             border-color: #ff9800;
@@ -98,27 +99,16 @@
             border-color: #1976d2;
             background: #e3f2fd;
         }
-        .plan-title {
-            font-size: 1.18rem;
-            font-weight: 700;
-            color: #1976d2;
-            margin-bottom: 8px;
-        }
-        .plan-title.pro {
-            color: #ff9800;
-        }
-        .plan-title.business {
-            color: #1976d2;
-        }
         .plan-badge {
-            font-size: 0.95rem;
+            font-size: 1.05rem;
             color: #fff;
             background: #43a047;
-            padding: 2px 12px;
-            border-radius: 12px;
-            margin-bottom: 10px;
-            font-weight: 600;
+            padding: 4px 18px;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            font-weight: 700;
             display: inline-block;
+            box-shadow: 0 2px 8px #1976d220;
         }
         .plan-badge.pro {
             background: #ff9800;
@@ -126,19 +116,36 @@
         .plan-badge.business {
             background: #1976d2;
         }
+        .plan-title {
+            font-size: 1.22rem;
+            font-weight: 700;
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+        .plan-title.pro {
+            color: #ff9800;
+        }
+        .plan-title.business {
+            color: #1976d2;
+        }
+        .plan-price {
+            font-size: 1.12rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
         .plan-features {
-            margin-bottom: 16px;
+            margin-bottom: 18px;
             padding-left: 0;
             list-style: none;
             width: 100%;
         }
         .plan-features li {
-            margin-bottom: 7px;
-            font-size: 1.01rem;
+            margin-bottom: 8px;
+            font-size: 1.04rem;
             color: #333;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 7px;
         }
         .plan-features .plus {
             color: #43a047;
@@ -157,9 +164,9 @@
             background: linear-gradient(90deg, #1976d2 60%, #43a047 100%);
             color: #fff;
             border: none;
-            padding: 12px 28px;
+            padding: 13px 32px;
             border-radius: 8px;
-            font-size: 1.05rem;
+            font-size: 1.07rem;
             font-weight: 600;
             cursor: pointer;
             box-shadow: 0 2px 8px #1976d220;
@@ -173,78 +180,75 @@
         .plan-btn:active {
             transform: scale(0.97);
         }
-        .features-list {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 22px;
-            margin-bottom: 32px;
-        }
-        .feature-card {
+        .section-card {
+            margin: 36px auto 0 auto;
+            max-width: 600px;
             background: linear-gradient(120deg, #e3f0ff 60%, #f7f7f7 100%);
-            border-radius: 14px;
-            box-shadow: 0 2px 12px #1976d210;
-            padding: 22px 24px 18px 24px;
-            min-width: 220px;
-            max-width: 270px;
-            flex: 1 1 220px;
-            text-align: left;
-            border-left: 5px solid #1976d2;
-            transition: transform 0.18s, box-shadow 0.18s;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px #1976d220;
+            padding: 32px 32px 22px 32px;
+            text-align: center;
+            border-left: 7px solid #1976d2;
+            border-right: 2px solid #43a047;
         }
-        .feature-card:hover {
-            transform: translateY(-4px) scale(1.03);
-            box-shadow: 0 8px 32px #1976d230;
+        .section-card .icon {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
         }
-        .feature-title {
-            font-size: 1.12rem;
-            font-weight: 600;
+        .section-card .title {
+            font-size: 1.28rem;
+            font-weight: 700;
             color: #1976d2;
             margin-bottom: 8px;
         }
-        .feature-desc {
-            color: #444;
-            font-size: 1rem;
-        }
-        .contact-section {
-            margin-top: 36px;
-            background: #f7f7f7;
-            border-radius: 14px;
-            padding: 22px 18px 18px 18px;
-            box-shadow: 0 2px 8px #1976d210;
-            max-width: 500px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .contact-title {
-            color: #1976d2;
-            font-weight: bold;
-            font-size: 1.15rem;
-            margin-bottom: 10px;
-        }
-        .contact-info {
+        .section-card .desc {
             color: #333;
+            font-size: 1.09rem;
+            margin-bottom: 12px;
+            line-height: 1.7;
+        }
+        .section-card .slogan {
+            font-style: italic;
+            color: #43a047;
             font-size: 1.08rem;
+            font-weight: 500;
+        }
+        .product-card {
+            margin: 36px auto 0 auto;
+            max-width: 700px;
+            background: #f5faff;
+            border-radius: 14px;
+            box-shadow: 0 2px 12px #1976d210;
+            padding: 24px 24px 16px 24px;
+        }
+        .product-card .title {
+            font-size: 1.18rem;
+            font-weight: 700;
+            color: #43a047;
             margin-bottom: 6px;
         }
-        .professional-note {
-            font-size: 1.08rem;
-            color: #1565c0;
-            font-weight: 500;
-            margin-bottom: 18px;
-            letter-spacing: 0.5px;
+        .product-card .desc {
+            color: #333;
+            font-size: 1.07rem;
+            margin-bottom: 8px;
+        }
+        .product-card a {
+            color: #1976d2;
+            font-weight: 600;
+            text-decoration: underline;
         }
         @media (max-width: 1100px) {
-            .hero-section { padding: 24px 6vw; }
-            .features-list { flex-direction: column; align-items: center; }
+            .main-container { padding: 0 2vw 40px 2vw; }
+            .hero { padding: 24px 6vw; }
         }
         @media (max-width: 900px) {
             .plan-compare { flex-direction: column; align-items: center; gap: 18px; }
             .plan-card { max-width: 98vw; }
         }
         @media (max-width: 700px) {
-            .hero-section { padding: 12px 2vw; }
-            .feature-card { min-width: 0; max-width: 100%; }
+            .main-container { padding: 0 1vw 24px 1vw; }
+            .hero { padding: 12px 2vw; }
+            .section-card, .product-card { padding: 14px 6px 10px 6px; }
         }
     </style>
 </head>
@@ -252,23 +256,21 @@
     <script src="menu.js"></script>
     <script src="data_io.js"></script>
     <script>renderMenu('index');</script>
-    <div class="hero-section">
-        <div class="professional-note">
-            Giải pháp phần mềm chuyên nghiệp, bảo mật và đồng hành cùng doanh nghiệp Việt.
+    <div class="main-container">
+        <div class="hero">
+            <img src="iconlogo.png" alt="Logo" class="hero-logo">
+            <div class="hero-title">TimePro HRM - Giải Pháp Chấm Công & Nhân Sự</div>
+            <div class="hero-slogan">Tối ưu hóa nguồn nhân lực, nâng tầm doanh nghiệp</div>
+            <div class="hero-desc">
+                TimePro HRM là giải pháp chấm công và quản lý nhân sự hiện đại, dễ sử dụng, phù hợp cho mọi doanh nghiệp vừa và nhỏ.<br>
+                <b>Quản lý công, lương, ca làm, thưởng phạt, xuất báo cáo... tất cả chỉ trong một nền tảng!</b>
+            </div>
         </div>
-        <img src="iconlogo.png" alt="Logo" class="hero-logo">
-        <div class="hero-title">TimePro HRM - Giải Pháp Chấm Công & Nhân Sự</div>
-        <div class="hero-slogan">Tối ưu hóa nguồn nhân lực, nâng tầm doanh nghiệp</div>
-        <div class="hero-desc">
-            TimePro HRM là giải pháp chấm công và quản lý nhân sự hiện đại, dễ sử dụng, phù hợp cho mọi doanh nghiệp vừa và nhỏ.<br>
-            <b>Quản lý công, lương, ca làm, thưởng phạt, xuất báo cáo... tất cả chỉ trong một nền tảng!</b>
-        </div>
-        <!-- Bảng so sánh phiên bản -->
         <div class="plan-compare">
             <div class="plan-card">
                 <div class="plan-badge" style="background:#43a047;">Free</div>
                 <div class="plan-title" style="color:#43a047;">Bản Free Trọn Đời</div>
-                <div style="color:#43a047;font-weight:600;margin-bottom:8px;">Miễn phí trọn đời</div>
+                <div class="plan-price" style="color:#43a047;">Miễn phí trọn đời</div>
                 <ul class="plan-features">
                     <li><span class="plus">✔</span> Không giới hạn tính năng</li>
                     <li><span class="plus">✔</span> Không cần đăng ký tài khoản</li>
@@ -283,7 +285,7 @@
             <div class="plan-card pro">
                 <div class="plan-badge pro">Pro</div>
                 <div class="plan-title pro">Bản Pro (Sắp ra mắt)</div>
-                <div style="color:#ff9800;font-weight:600;margin-bottom:8px;">20.000đ/tháng<br>hoặc 240.000đ/năm</div>
+                <div class="plan-price" style="color:#ff9800;">20.000đ/tháng<br>hoặc 240.000đ/năm</div>
                 <ul class="plan-features">
                     <li><span class="plus">✔</span> Đầy đủ mọi tính năng của bản Free</li>
                     <li><span class="plus">✔</span> Đồng bộ dữ liệu lên server bảo mật</li>
@@ -295,10 +297,10 @@
                     <button class="plan-btn pro" onclick="alert('Phiên bản Pro chưa được phát hành. Vui lòng quay lại sau!')">Mua Pro</button>
                 </div>
             </div>
-            <div class="plan-card business" style="border-color:#1976d2;background:#e3f2fd;">
-                <div class="plan-badge" style="background:#1976d2;">Business</div>
-                <div class="plan-title" style="color:#1976d2;">Bản Business (Sắp phát hành)</div>
-                <div style="color:#1976d2;font-weight:600;margin-bottom:8px;">500.000đ/tháng<br>năm = tháng x 12</div>
+            <div class="plan-card business">
+                <div class="plan-badge business">Business</div>
+                <div class="plan-title business">Bản Business (Sắp phát hành)</div>
+                <div class="plan-price" style="color:#1976d2;">500.000đ/tháng<br>năm = tháng x 12</div>
                 <ul class="plan-features">
                     <li><span class="plus">✔</span> Đầy đủ mọi tính năng của bản Pro</li>
                     <li><span class="plus">✔</span> Quản lý nhiều chi nhánh, phòng ban</li>
@@ -312,36 +314,27 @@
                 </div>
             </div>
         </div>
-        <div class="features-list">
-            <!-- Đã loại bỏ toàn bộ các feature-card theo yêu cầu -->
-        </div>
-        <div class="contact-section">
-            <div class="contact-title">Liên hệ hỗ trợ & tư vấn</div>
-            <div class="contact-info">📞 Hotline: <b>0867 544 809</b></div>
-            <div class="contact-info">📧 Email: <b>khoaminhtran9@gmail.com</b></div>
-            <div class="contact-info">📍 Địa chỉ: Ninh Hòa, Khánh Hòa</div>
-            <div class="contact-info" style="color:#1976d2;font-weight:500;margin-top:10px;">
-                Đội ngũ MK SOF cam kết hỗ trợ tận tâm, chuyên nghiệp 24/7 cho khách hàng.
-            </div>
-            <!-- Thông tin về đội ngũ phát triển MK SOF -->
-            <div style="margin-top:18px;padding:14px 10px;background:#e3f2fd;border-radius:10px;color:#1976d2;">
-                <b>Về đội ngũ phát triển MK SOF:</b><br>
+        <div class="section-card">
+            <div class="icon">👨‍💻</div>
+            <div class="title">Đội ngũ phát triển <span style="color:#43a047;">MK SOF</span></div>
+            <div class="desc">
                 MK SOF là tập hợp các kỹ sư phần mềm trẻ, sáng tạo và giàu kinh nghiệm trong lĩnh vực giải pháp quản lý doanh nghiệp.<br>
-                Chúng tôi luôn đặt chất lượng, bảo mật và sự hài lòng của khách hàng lên hàng đầu.<br>
-                <i>MK SOF - Đồng hành cùng doanh nghiệp Việt trên hành trình chuyển đổi số!</i>
+                Chúng tôi luôn đặt <span style="color:#1976d2;font-weight:500;">chất lượng</span>, <span style="color:#1976d2;font-weight:500;">bảo mật</span> và <span style="color:#1976d2;font-weight:500;">sự hài lòng của khách hàng</span> lên hàng đầu.
+            </div>
+            <div class="slogan">
+                MK SOF - Đồng hành cùng doanh nghiệp Việt trên hành trình chuyển đổi số!
             </div>
         </div>
-        <!-- Giới thiệu sản phẩm khác của MK SOF -->
-        <div style="margin-top:32px;max-width:700px;padding:18px 18px 14px 18px;background:#f5faff;border-radius:14px;box-shadow:0 2px 12px #1976d210;">
-            <div style="font-size:1.18rem;font-weight:700;color:#43a047;margin-bottom:6px;">
+        <div class="product-card">
+            <div class="title">
                 🌟 Sản phẩm mới của MK SOF: <span style="color:#1976d2;">Phần mềm Quản Lý Bán Hàng</span>
             </div>
-            <div style="color:#333;font-size:1.07rem;margin-bottom:8px;">
+            <div class="desc">
                 Giải pháp quản lý bán hàng đơn giản, hiệu quả, phù hợp cho cửa hàng, doanh nghiệp vừa và nhỏ.<br>
                 <b>Quản lý đơn hàng, kho, khách hàng, báo cáo doanh thu... tất cả trong một phần mềm!</b>
             </div>
             <div>
-                <a href="qlbh.html" style="color:#1976d2;font-weight:600;text-decoration:underline;" target="_blank">Tìm hiểu thêm</a>
+                <a href="qlbh.html" target="_blank">Tìm hiểu thêm</a>
             </div>
         </div>
     </div>
