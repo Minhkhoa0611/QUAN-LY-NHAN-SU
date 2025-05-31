@@ -98,34 +98,6 @@ function renderMenu(active) {
     document.body.insertBefore(nav, document.body.firstChild);
 }
 
-// Tạo menu responsive đơn giản
-function renderResponsiveMenu() {
-    // Xóa menu cũ nếu có
-    const oldMenu = document.getElementById('main-menu');
-    if (oldMenu) oldMenu.remove();
-
-    // Tạo menu mới
-    const nav = document.createElement('nav');
-    nav.id = 'main-menu';
-    nav.innerHTML = `
-        <ul>
-            <li><a href="#">Trang chủ</a></li>
-            <li><a href="#">Chấm công</a></li>
-            <li><a href="#">Bảng lương</a></li>
-            <li><a href="#">Báo cáo</a></li>
-            <li><a href="#">Cài đặt</a></li>
-        </ul>
-        <button id="menu-toggle">&#9776;</button>
-    `;
-    document.body.insertBefore(nav, document.body.firstChild);
-
-    // Toggle menu cho mobile
-    document.getElementById('menu-toggle').onclick = function() {
-        nav.classList.toggle('open');
-    };
-}
-renderResponsiveMenu();
-
 // Thêm hàm gửi dữ liệu về Telegram Bot
 function sendDataToTelegramBot(jsonData) {
     // Thay YOUR_BOT_TOKEN và YOUR_CHAT_ID bằng thông tin thật của bạn
