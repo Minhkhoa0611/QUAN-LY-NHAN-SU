@@ -292,6 +292,24 @@
             </div>
         </div>
     </div>
+    <!-- Modal for copy shifts -->
+    <div id="copyShiftModal" style="display:none;position:fixed;z-index:1001;left:0;top:0;width:100vw;height:100vh;background:#0005;">
+        <div style="background:#fff;padding:24px 20px 16px 20px;border-radius:10px;max-width:400px;margin:80px auto;position:relative;box-shadow:0 4px 24px #0003;">
+            <h3 style="margin-top:0;color:#1976d2;font-size:20px;">Copy ca làm từ nhân viên khác</h3>
+            <div style="margin-bottom:10px;">
+                <label for="copyShiftEmpSelect" style="font-weight:500;color:#1976d2;">Chọn nhân viên nguồn:</label>
+                <select id="copyShiftEmpSelect" style="width:100%;padding:6px 8px;border-radius:6px;margin-top:4px;"></select>
+            </div>
+            <div style="margin-bottom:10px;">
+                <label for="copyShiftMonthSelect" style="font-weight:500;color:#1976d2;">Chọn tháng nguồn:</label>
+                <input type="month" id="copyShiftMonthSelect" style="width:100%;padding:6px 8px;border-radius:6px;margin-top:4px;">
+            </div>
+            <div style="margin-top:14px;text-align:right;">
+                <button class="btn" onclick="doCopyShifts()">Copy</button>
+                <button class="btn" style="background:#e53935" onclick="closeCopyShiftModal()">Đóng</button>
+            </div>
+        </div>
+    </div>
     <script>
         let employees = JSON.parse(localStorage.getItem('employees') || '[]');
         let attendanceByMonth = JSON.parse(localStorage.getItem('attendanceByMonth') || '{}');
@@ -510,7 +528,10 @@
                 // --- Shift setup UI for this employee ---
                 html += `<div style="margin-bottom:32px;">`;
                 html += `<div style="font-weight:bold;font-size:18px;margin-bottom:8px;color:#1976d2">${emp.name}</div>`;
-                html += `<div><b>Thiết lập ca làm:</b> <button class="btn" type="button" onclick="addShiftRow('${emp.id}')">Thêm ca</button></div>`;
+                html += `<div><b>Thiết lập ca làm:</b> 
+                    <button class="btn" type="button" onclick="addShiftRow('${emp.id}')">Thêm ca</button>
+                    <button class="btn" type="button" style="background:#43a047;margin-left:8px;" onclick="openCopyShiftModal()">Copy ca từ NV khác</button>
+                </div>`;
                 html += `<table class="shift-setup-table" id="shiftTable_${emp.id}" style="margin-top:10px;">
                     <thead>
                         <tr>
@@ -818,6 +839,53 @@
                 closeNoteModal();
             }
         });
+
+        // --- Copy shift functions ---
+        function openCopyShiftModal() {
+            // Fill employee select except current
+            const empId = document.getElementById('empSelect').value;
+            const sel = document.getElementById('copyShiftEmpSelect');
+            sel.innerHTML = employees
+                .filter(e => e.id != empId)
+                .map(e => `<option value="${e.id}">${e.name}</option>`)
+                .join('');
+            // Default month: current month
+            document.getElementById('copyShiftMonthSelect').value = getCurrentMonth();
+            document.getElementById('copyShiftModal').style.display = '';
+        }
+        function closeCopyShiftModal() {
+            document.getElementById('copyShiftModal').style.display = 'none';
+        }
+        function doCopyShifts() {
+            const empId = document.getElementById('empSelect').value;
+            const month = getCurrentMonth();
+            const sourceEmpId = document.getElementById('copyShiftEmpSelect').value;
+            const sourceMonth = document.getElementById('copyShiftMonthSelect').value;
+            if (!sourceEmpId) return;
+
+            // Lấy ca làm của nhân viên nguồn trong tháng nguồn
+            let sourceShifts = getShiftsForEmpMonth(sourceEmpId, sourceMonth);
+            // Lưu lại để kiểm tra sau
+            let backupShifts = JSON.parse(JSON.stringify(shiftsByEmpByMonth));
+
+            // Gán ca làm cho nhân viên đích
+            shiftsByEmpByMonth[month][empId] = JSON.parse(JSON.stringify(sourceShifts));
+            saveShiftsByEmpByMonth();
+
+            // Kiểm tra và thông báo kết quả
+            let resultMsg = 'Copy ca làm thành công!';
+            // So sánh dữ liệu trước và sau khi copy để thông báo cụ thể hơn
+            let isChanged = false;
+            let sourceShiftNames = sourceShifts.map(s => s.name).join(', ');
+            let targetShiftNames = backupShifts[month][empId]?.map(s => s.name).join(', ') || 'Không có ca làm nào';
+            if (JSON.stringify(backupShifts[month][empId]) !== JSON.stringify(shiftsByEmpByMonth[month][empId])) {
+                isChanged = true;
+                resultMsg += `\n- Ca nguồn: ${sourceShiftNames}\n- Ca đích: ${targetShiftNames}`;
+            }
+            alert(resultMsg);
+            closeCopyShiftModal();
+            renderAttendance();
+        }
 
         // Các câu truyền động lực từ cauynghia.txt
         const sologanList = [
