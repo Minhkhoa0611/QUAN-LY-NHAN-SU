@@ -157,6 +157,64 @@
             cursor: pointer;
             vertical-align: middle; /* Thêm dòng này để căn giữa checkbox */
         }
+        /* Sologan fire effect */
+        .sologan-fire {
+            background: linear-gradient(90deg, #ff9800 0%, #ff5722 40%, #ffd600 60%, #ff9800 100%);
+            color: #fff;
+            font-size: 1.35rem;
+            font-weight: bold;
+            margin-bottom: 22px;
+            text-align: center;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px #ff980080, 0 0 16px #ffd60080 inset;
+            padding: 16px 0 14px 0;
+            letter-spacing: 1.5px;
+            text-shadow:
+                0 2px 8px #ff9800cc,
+                0 0 12px #ffd600cc,
+                0 0 2px #fff;
+            position: relative;
+            overflow: hidden;
+            animation: fireGlow 2s infinite alternate;
+            cursor: pointer;
+            user-select: none;
+        }
+        @keyframes fireGlow {
+            0% {
+                box-shadow: 0 4px 24px #ff980080, 0 0 16px #ffd60080 inset;
+                text-shadow:
+                    0 2px 8px #ff9800cc,
+                    0 0 12px #ffd600cc,
+                    0 0 2px #fff;
+            }
+            100% {
+                box-shadow: 0 8px 36px #ff5722cc, 0 0 32px #ffd600cc inset;
+                text-shadow:
+                    0 4px 16px #ff5722cc,
+                    0 0 24px #ffd600cc,
+                    0 0 6px #fff;
+            }
+        }
+        .sologan-fire .flame {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+            width: 38px;
+            height: 38px;
+            pointer-events: none;
+            z-index: 2;
+            animation: flameMove 1.2s infinite alternate;
+        }
+        @keyframes flameMove {
+            0% { transform: translateX(-50%) scaleY(1); opacity: 1; }
+            100% { transform: translateX(-50%) scaleY(1.18); opacity: 0.85; }
+        }
+        .sologan-fire .flame svg {
+            display: block;
+            width: 38px;
+            height: 38px;
+        }
         /* Responsive */
         @media (max-width: 900px) {
             .container { padding: 12px 2vw; }
@@ -182,6 +240,27 @@
             <span style="color:#1976d2;font-size:1.05rem;font-weight:500;display:block;margin-top:8px;">
                 Mọi sự cố kỹ thuật liên quan đến chấm công, bảng lương, mất dữ liệu công vui lòng liên hệ Zalo: <b>0867544809</b>
             </span>
+        </div>
+        <div id="sologanBox" class="sologan-fire">
+            <span class="flame">
+                <svg viewBox="0 0 38 38">
+                    <defs>
+                        <radialGradient id="flameGrad" cx="50%" cy="60%" r="60%">
+                            <stop offset="0%" stop-color="#fffde4"/>
+                            <stop offset="40%" stop-color="#ffd600"/>
+                            <stop offset="80%" stop-color="#ff9800"/>
+                            <stop offset="100%" stop-color="#ff5722"/>
+                        </radialGradient>
+                    </defs>
+                    <path d="M19 36
+                        C10 28, 14 18, 19 6
+                        C24 18, 28 28, 19 36
+                        Z"
+                        fill="url(#flameGrad)" opacity="0.95"/>
+                    <ellipse cx="19" cy="22" rx="5" ry="8" fill="#fffde4" opacity="0.5"/>
+                </svg>
+            </span>
+            <!-- Sologan sẽ được JS thay thế -->
         </div>
         <h2>Chấm công theo tháng</h2>
         <div class="form-row">
@@ -739,6 +818,75 @@
                 closeNoteModal();
             }
         });
+
+        // Các câu truyền động lực từ cauynghia.txt
+        const sologanList = [
+            "Khó khăn không ở lại mãi, người kiên cường mới đi đến cuối con đường.",
+            "Mỗi lần vấp ngã là một bước tiến gần hơn đến thành công.",
+            "Không ai thành công mà không từng thất bại.",
+            "Hãy vươn lên như mầm cây sau trận mưa giông.",
+            "Giới hạn duy nhất là giới hạn do chính bạn đặt ra.",
+            "Ngã ở đâu, đứng lên ở đó.",
+            "Dù chậm nhưng đừng dừng lại.",
+            "Không có đường tắt đến thành công, chỉ có sự kiên trì.",
+            "Khi bạn nghĩ bạn không thể, hãy nhớ vì sao bạn bắt đầu.",
+            "Thành công thuộc về những người không bỏ cuộc.",
+            "Ý chí là chiếc chìa khóa mở mọi cánh cửa.",
+            "Gió mạnh tạo nên người thủy thủ tài ba.",
+            "Hãy mài giũa ý chí như mài dao sắc bén.",
+            "Không thử sức, không biết mình mạnh đến đâu.",
+            "Vượt qua giới hạn hôm qua chính là chiến thắng lớn nhất.",
+            "Càng nhiều thử thách, càng nhiều cơ hội trưởng thành.",
+            "Đừng chờ hoàn cảnh đổi thay, hãy tự thay đổi chính mình.",
+            "Đôi khi mất mát là cơ hội để bắt đầu lại tốt hơn.",
+            "Mỗi sáng thức dậy là một cơ hội làm lại.",
+            "Ý chí không đến từ thuận lợi, mà sinh ra trong nghịch cảnh.",
+            "Cuộc sống không dành cho kẻ lười biếng và đầu hàng.",
+            "Không có gì quý hơn tinh thần không khuất phục.",
+            "Người không lùi bước là người bất khả chiến bại.",
+            "Mỗi giọt mồ hôi hôm nay là viên gạch xây nên tương lai.",
+            "Nghị lực giúp bạn đứng vững khi mọi thứ chống lại bạn.",
+            "Đừng đợi cơ hội, hãy tạo ra nó.",
+            "Hành trình ngàn dặm bắt đầu từ một bước chân.",
+            "Hãy tin rằng bạn xứng đáng với những điều tốt đẹp.",
+            "Khi mọi cánh cửa đóng lại, hãy tìm cửa sổ để bước ra.",
+            "Nơi nào có ý chí, nơi đó có con đường.",
+            "Khó khăn là giáo viên tốt nhất dạy ta trưởng thành.",
+            "Hãy sống như ánh mặt trời – luôn tỏa sáng dù ngày u tối.",
+            "Mọi điều lớn lao đều bắt đầu từ những nỗ lực nhỏ.",
+            "Dù cuộc sống đẩy bạn ngã, đừng quên lý do bạn phải đứng lên.",
+            "Thành công đến với ai không ngừng cố gắng, không ngừng hy vọng.",
+            "Ý chí mạnh sẽ khiến mọi điều trở nên khả thi.",
+            "Càng thử thách, càng quý trọng thành quả.",
+            "Hãy mỉm cười với thất bại và bước tiếp.",
+            "Dù bị đẩy vào bóng tối, hãy là người đi tìm ánh sáng.",
+            "Không ai có thể lấy đi ước mơ nếu bạn không tự từ bỏ.",
+            "Mỗi lần vượt qua nỗi sợ là một lần bạn trưởng thành.",
+            "Khó khăn không kéo dài, nhưng con người kiên cường thì mãi tồn tại.",
+            "Thất bại không đáng sợ, sợ nhất là không dám bắt đầu lại.",
+            "Không điều gì là vô nghĩa nếu bạn rút ra được bài học từ nó.",
+            "Vượt qua bản thân là chiến thắng lớn nhất.",
+            "Hãy học cách đứng vững trước giông tố, không phải trốn tránh nó.",
+            "Thái độ quyết định độ cao bạn vươn tới.",
+            "Một người có nghị lực là người có thể làm nên mọi điều kỳ diệu.",
+            "Chẳng ai viết nên cuộc đời bạn ngoài chính bạn.",
+            "Hãy sống như thể hôm nay là cơ hội cuối cùng để vươn lên."
+        ];
+
+        function pickRandomSologan() {
+            const idx = Math.floor(Math.random() * sologanList.length);
+            return sologanList[idx];
+        }
+
+        function setSologan() {
+            document.getElementById('sologanBox').textContent = pickRandomSologan();
+        }
+
+        // Đổi sologan mỗi phút
+        setInterval(setSologan, 60000);
+
+        // Đổi sologan khi tải trang
+        setSologan();
     </script>
     <script src="footer.js"></script>
     <script>renderFooter();</script>
