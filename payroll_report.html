@@ -63,6 +63,7 @@
                         <th>Phụ cấp</th>
                         <th>Thưởng lễ</th>
                         <th>Phạt</th>
+                        <th>Tiền ứng</th>
                         <th>Tổng lương</th>
                     </tr>
                 </thead>
@@ -80,10 +81,12 @@
                 let allowanceVal = getPayrollInput(emp.id, month, 'allowance', 0);
                 let bonusVal = getPayrollInput(emp.id, month, 'bonus', 0);
                 let penaltyVal = getPayrollInput(emp.id, month, 'penalty', 0);
+                let advanceVal = getPayrollInput(emp.id, month, 'advance', 0);
                 let extraShifts = parseFloat((extraShiftsVal + '').replace(',', '.')) || 0;
                 let allowance = parseCurrency(allowanceVal);
                 let bonus = parseCurrency(bonusVal);
                 let penalty = parseCurrency(penaltyVal);
+                let advance = parseCurrency(advanceVal);
                 let extra = extraShifts * (perDayEmp || 0);
 
                 let total = 0;
@@ -102,7 +105,7 @@
                     }
                     let caSalaries = caCong.map((count, idx) => count * (parseInt(shifts[idx]?.salary) || 0));
                     let totalCaSalary = caSalaries.reduce((a, b) => a + b, 0);
-                    total = totalCaSalary + allowance + bonus - penalty;
+                    total = totalCaSalary + allowance + bonus - penalty - advance;
                     workdays = caCong.reduce((a, b) => a + b, 0);
                 } else {
                     // Đếm tổng công (bao gồm nửa ca nếu có)
@@ -130,7 +133,7 @@
                         salary = workdays * (perDayEmp || 0);
                         if (salary > baseSalary) salary = baseSalary;
                     }
-                    total = salary + extra + allowance + bonus - penalty;
+                    total = salary + extra + allowance + bonus - penalty - advance;
                     workdays = workdays + extraShifts;
                 }
                 if (total < 0) total = 0;
@@ -142,6 +145,7 @@
                     <td>${formatVND(allowance)}</td>
                     <td>${formatVND(bonus)}</td>
                     <td>${formatVND(penalty)}</td>
+                    <td>${formatVND(advance)}</td>
                     <td style="font-weight:bold;color:#1976d2;">${formatVND(total)}</td>
                 </tr>`;
             });

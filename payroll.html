@@ -190,6 +190,7 @@
                 let allowanceVal = getPayrollInputByMonth(emp.id, monthVal, 'allowance', 0);
                 let bonusVal = getPayrollInputByMonth(emp.id, monthVal, 'bonus', 0);
                 let penaltyVal = getPayrollInputByMonth(emp.id, monthVal, 'penalty', 0);
+                let advanceVal = getPayrollInputByMonth(emp.id, monthVal, 'advance', 0);
 
                 html += `<div class="employee-payroll-block">`;
                 html += `<div class="employee-payroll-header">
@@ -219,6 +220,13 @@
                         <span class="note-icon" tabindex="0">!</span>
                         <span class="note-tooltip">Nhập số tiền thưởng lễ, thưởng thêm cho nhân viên trong tháng này (nếu có)</span>
                     </label>
+                    <label>Tiền ứng:
+                        <input type="text" id="payrollAdvance_${emp.id}" value="${getPayrollInputByMonth(emp.id, monthVal, 'advance', 0)}"
+                            oninput="formatCurrencyLiveInput(this)" 
+                            onblur="formatCurrencyLiveInput(this);savePayrollInput('${emp.id}','${monthVal}','advance',this.value);calcPayroll()">
+                        <span class="note-icon" tabindex="0">!</span>
+                        <span class="note-tooltip">Nhập số tiền ứng trước (nếu có) cho nhân viên trong tháng này</span>
+                    </label>
                     <label>Phạt:
                         <input type="text" id="payrollPenalty_${emp.id}" value="${penaltyVal}" 
                             oninput="formatCurrencyLiveInput(this)" 
@@ -238,6 +246,7 @@
                 let allowance = parseCurrency(allowanceVal);
                 let bonus = parseCurrency(bonusVal);
                 let penalty = parseCurrency(penaltyVal);
+                let advance = parseCurrency(advanceVal);
                 let extra = extraShifts * (perDayEmp || 0);
 
                 // --- SỬA ĐOẠN NÀY ---
@@ -262,7 +271,7 @@
                         let caSalaries = caCong.map((count, idx) => count * (parseInt(shifts[idx]?.salary) || 0));
                         let totalCa = caCong.reduce((a, b) => a + b, 0);
                         let totalCaSalary = caSalaries.reduce((a, b) => a + b, 0);
-                        let total = totalCaSalary + allowance + bonus - penalty;
+                        let total = totalCaSalary + allowance + bonus - penalty - advance;
 
                         if (totalCa === 0) {
                             html += `<div style="color:#d32f2f;font-weight:bold;margin-bottom:12px;">Chưa có công trong tháng này.</div>`;
@@ -306,6 +315,10 @@
                                 <td colspan="2">Phạt</td>
                                 <td colspan="2">${formatVND(penalty)}</td>
                             </tr>
+                            <tr style="font-weight:bold;">
+                                <td colspan="2">Tiền ứng</td>
+                                <td colspan="2">${formatVND(advance)}</td>
+                            </tr>
                             <tr style="font-weight:bold;color:#1976d2;">
                                 <td colspan="2">Lương thực nhận</td>
                                 <td colspan="2">${formatVND(total)}</td>
@@ -343,7 +356,7 @@
                         salary = workdays * (perDayEmp || 0);
                         if (salary > baseSalary) salary = baseSalary;
                     }
-                    let total = salary + extra + allowance + bonus - penalty;
+                    let total = salary + extra + allowance + bonus - penalty - advance;
                     let displayWorkdays = tongCong + extraShifts;
                     let baseSalaryLabel = `${formatVND(baseSalary)} <span style="font-size:12px;color:#888">(Tháng)</span>`;
                     html += `<table class="employee-payroll-table">
@@ -353,6 +366,7 @@
                                 <th>Lương cơ bản</th>
                                 <th>Phụ cấp</th>
                                 <th>Thưởng lễ</th>
+                                <th>Tiền ứng</th>
                                 <th>Phạt</th>
                                 <th>Lương thực nhận</th>
                             </tr>
@@ -363,6 +377,7 @@
                                 <td>${baseSalaryLabel}</td>
                                 <td>${formatVND(allowance)}</td>
                                 <td>${formatVND(bonus)}</td>
+                                <td>${formatVND(advance)}</td>
                                 <td>${formatVND(penalty)}</td>
                                 <td style="font-weight:bold;color:#1976d2;">${formatVND(total)}</td>
                             </tr>

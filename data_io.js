@@ -46,7 +46,7 @@ function getExportData() {
         salaryPerDay: String(Number(localStorage.getItem('salaryPerDay')) || 0),
         shiftsByEmp,
         shiftsByEmpByMonth,
-        payrollInputs: JSON.parse(localStorage.getItem('payrollInputs') || '{}'),
+        payrollInputs: JSON.parse(localStorage.getItem('payrollInputs') || '{}'), // advance (tiền ứng) nằm trong đây
         notes: (() => {
             let notes = {};
             Object.keys(localStorage).forEach(k => {
