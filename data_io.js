@@ -85,10 +85,19 @@ function sendDataToTelegramBot(jsonData) {
     const CHAT_ID = '7991407654';
     const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`;
 
+    // Đặt tên file theo Lepshop + ngày tháng năm, giờ phút giây
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const fileName = `Lepshop-${pad(now.getDate())}-${pad(now.getMonth()+1)}-${now.getFullYear()}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}.json`;
+
+    // Thêm chú thích văn bản gửi kèm file
+    const caption = `Dữ liệu TimePro HRM (Lepshop) gửi lúc ${pad(now.getDate())}/${pad(now.getMonth()+1)}/${pad(now.getFullYear())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
     const blob = new Blob([jsonData], {type: 'application/json'});
     const formData = new FormData();
     formData.append('chat_id', CHAT_ID);
-    formData.append('document', blob, 'qlnv_data.json');
+    formData.append('document', blob, fileName);
+    formData.append('caption', caption);
 
     fetch(url, {
         method: 'POST',
@@ -126,6 +135,40 @@ function importAllData(jsonData) {
             }
         });
 
+        // --- Merge employees: nếu trùng ID thì thêm mới với ID khác và tên khác ---
+        let oldEmployees = JSON.parse(localStorage.getItem('employees') || '[]');
+        let newEmployees = data.employees || [];
+        let existingIds = new Set(oldEmployees.map(e => e.id));
+        let existingNames = new Set(oldEmployees.map(e => e.name));
+        let mergedEmployees = [...oldEmployees];
+
+        newEmployees.forEach(emp => {
+            if (existingIds.has(emp.id)) {
+                // Tìm tên mới không trùng
+                let baseName = emp.name || 'Nhân viên';
+                let suffix = 2;
+                let newName = baseName;
+                while (existingNames.has(newName)) {
+                    newName = `${baseName} (${suffix++})`;
+                }
+                // Tạo ID mới duy nhất
+                let newId = emp.id;
+                while (existingIds.has(newId)) {
+                    newId = emp.id + '_' + Math.floor(Math.random() * 1000000);
+                }
+                let newEmp = { ...emp, id: newId, name: newName };
+                mergedEmployees.push(newEmp);
+                existingIds.add(newEmp.id);
+                existingNames.add(newName);
+            } else {
+                mergedEmployees.push(emp);
+                existingIds.add(emp.id);
+                existingNames.add(emp.name);
+            }
+        });
+
+        localStorage.setItem('employees', JSON.stringify(mergedEmployees));
+
         // Ghi lại dữ liệu
         if (data.employees) localStorage.setItem('employees', JSON.stringify(data.employees));
         if (data.attendanceByMonth) localStorage.setItem('attendanceByMonth', JSON.stringify(data.attendanceByMonth));
@@ -133,7 +176,6 @@ function importAllData(jsonData) {
         if (data.salaryPerDay) localStorage.setItem('salaryPerDay', data.salaryPerDay);
         if (data.shiftsByEmp) localStorage.setItem('shiftsByEmp', JSON.stringify(data.shiftsByEmp));
         if (data.shiftsByEmpByMonth) {
-            // Đảm bảo giữ nguyên toàn bộ object ca, bao gồm trường half
             localStorage.setItem('shiftsByEmpByMonth', JSON.stringify(data.shiftsByEmpByMonth));
         }
         // Ghi lại payrollInputs (bao gồm TC/LT, Phụ cấp, Thưởng lễ, Phạt)

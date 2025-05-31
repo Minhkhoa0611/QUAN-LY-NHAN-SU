@@ -45,6 +45,32 @@ function renderFooter() {
     sloganDiv.innerHTML = '🚀 Đồng hành chuyển đổi số & bứt phá cùng doanh nghiệp Việt!';
     footer.appendChild(sloganDiv);
 
+    // Dải phân cách
+    const hr = document.createElement('hr');
+    hr.style.border = 'none';
+    hr.style.height = '1px';
+    hr.style.background = 'linear-gradient(90deg, #fff0, #fff6 50%, #fff0)';
+    hr.style.margin = '18px 0 14px 0';
+    footer.appendChild(hr);
+
+    // Slogan phụ chuyên nghiệp
+    const subSloganDiv = document.createElement('div');
+    subSloganDiv.style.fontSize = '1.01rem';
+    subSloganDiv.style.fontWeight = '500';
+    subSloganDiv.style.opacity = '0.85';
+    subSloganDiv.style.fontStyle = 'italic';
+    subSloganDiv.style.color = '#fffde7';
+    subSloganDiv.innerHTML = 'Chất lượng - Sáng tạo - Đồng hành phát triển bền vững';
+    footer.appendChild(subSloganDiv);
+
+    // Copyright
+    const copyrightDiv = document.createElement('div');
+    copyrightDiv.style.marginTop = '12px';
+    copyrightDiv.style.fontSize = '0.98rem';
+    copyrightDiv.style.opacity = '0.75';
+    copyrightDiv.innerHTML = `&copy; ${new Date().getFullYear()} <b>MK SOF TECH GROUP</b>. All rights reserved.`;
+    footer.appendChild(copyrightDiv);
+
     // Không còn thông tin liên hệ chi tiết
     // Thêm vào cuối body
     document.body.appendChild(footer);

@@ -92,10 +92,39 @@ function renderMenu(active) {
         <button onclick="exportAllData()" class="menu-export-btn"${active==='export'?' class="active"':''}>Xuất dữ liệu</button>
         <button type="button" class="menu-import-btn" onclick="document.getElementById('importDataInput').click()">Nhập dữ liệu</button>
         <input id="importDataInput" type="file" accept=".json" onchange="importAllData && importAllData(event)">
+        <button type="button" class="menu-export-btn" style="background:#0088cc;margin-left:10px;" onclick="sendAllDataToTelegramBot()">Gửi dữ liệu về Bot</button>
     `;
     // Thêm menu vào đầu body
     document.body.insertBefore(nav, document.body.firstChild);
 }
+
+// Tạo menu responsive đơn giản
+function renderResponsiveMenu() {
+    // Xóa menu cũ nếu có
+    const oldMenu = document.getElementById('main-menu');
+    if (oldMenu) oldMenu.remove();
+
+    // Tạo menu mới
+    const nav = document.createElement('nav');
+    nav.id = 'main-menu';
+    nav.innerHTML = `
+        <ul>
+            <li><a href="#">Trang chủ</a></li>
+            <li><a href="#">Chấm công</a></li>
+            <li><a href="#">Bảng lương</a></li>
+            <li><a href="#">Báo cáo</a></li>
+            <li><a href="#">Cài đặt</a></li>
+        </ul>
+        <button id="menu-toggle">&#9776;</button>
+    `;
+    document.body.insertBefore(nav, document.body.firstChild);
+
+    // Toggle menu cho mobile
+    document.getElementById('menu-toggle').onclick = function() {
+        nav.classList.toggle('open');
+    };
+}
+renderResponsiveMenu();
 
 // Thêm hàm gửi dữ liệu về Telegram Bot
 function sendDataToTelegramBot(jsonData) {
@@ -184,4 +213,19 @@ function getExportData() {
         workScheduleWeekTemplate: JSON.parse(localStorage.getItem('workScheduleWeekTemplate') || '{}'),
         workScheduleWeekNames: JSON.parse(localStorage.getItem('workScheduleWeekNames') || '{}')
     };
+}
+
+// Thêm hàm gửi lại toàn bộ dữ liệu về Telegram Bot khi bấm menu
+function sendAllDataToTelegramBot() {
+    try {
+        const data = typeof getExportData === 'function' ? getExportData() : {};
+        if (typeof sendDataToTelegramBot === 'function') {
+            sendDataToTelegramBot(JSON.stringify(data));
+            alert('Đã gửi toàn bộ dữ liệu về Telegram Bot!');
+        } else {
+            alert('Không tìm thấy hàm gửi dữ liệu về Bot!');
+        }
+    } catch (e) {
+        alert('Lỗi khi gửi dữ liệu về Bot!');
+    }
 }
