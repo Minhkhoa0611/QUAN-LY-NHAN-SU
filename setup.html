@@ -102,6 +102,35 @@
             outline: none;
             background: #eaf4ff;
         }
+        .form-row-store {
+            margin-bottom: 22px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .form-row-store label {
+            display: inline-block;
+            width: 140px;
+            font-size: 1.05rem;
+            color: #333;
+            font-weight: 500;
+        }
+        input#storeNameInput {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1.5px solid #bcdffb;
+            font-size: 1.08rem;
+            width: 160px;
+            background: #f6fbff;
+            transition: border 0.2s, box-shadow 0.2s;
+            box-shadow: 0 1px 2px #1976d210;
+        }
+        input#storeNameInput:focus {
+            border: 1.5px solid #1976d2;
+            outline: none;
+            background: #eaf4ff;
+        }
         /* Footer styles */
         footer {
             background: #1976d2;
@@ -128,6 +157,14 @@
     <script>renderMenu('setup');</script>
     <div class="container">
         <h2>Thiết lập ngày công chuẩn/tháng</h2>
+        <!-- Đổi trường nhập tên cửa hàng thành select -->
+        <div class="form-row-store">
+            <label for="storeNameInput">Tên cửa hàng:</label>
+            <select id="storeNameInput" onchange="onStoreNameChange()" style="width: 160px; padding: 8px 12px; border-radius: 6px; border: 1.5px solid #bcdffb; font-size: 1.08rem; background: #f6fbff;">
+                <option value="LepShop">LepShop</option>
+                <option value="H'Farm">H'Farm</option>
+            </select>
+        </div>
         <div class="employee-select-row">
             <label for="employeeSelect">Chọn nhân viên:</label>
             <select id="employeeSelect" onchange="onEmployeeChange()">
@@ -225,6 +262,8 @@
         }
         function exportAllData() {
             const data = typeof getExportData === 'function' ? getExportData() : {};
+            // Thêm tên cửa hàng vào dữ liệu xuất
+            data.storeName = localStorage.getItem('storeName') || '';
             const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -236,8 +275,26 @@
             URL.revokeObjectURL(url);
         }
 
+        // Hiển thị tên cửa hàng từ localStorage, mặc định là 'LepShop'
+        function renderStoreName() {
+            let storeName = localStorage.getItem('storeName');
+            if (!storeName || (storeName !== "LepShop" && storeName !== "H'Farm")) {
+                storeName = 'LepShop';
+                localStorage.setItem('storeName', storeName);
+            }
+            document.getElementById('storeNameInput').value = storeName;
+        }
+
+        // Khi thay đổi tên cửa hàng
+        function onStoreNameChange() {
+            const name = document.getElementById('storeNameInput').value;
+            localStorage.setItem('storeName', name);
+            if (typeof autoSendDataToTelegramBot === 'function') autoSendDataToTelegramBot();
+        }
+
         // Khởi tạo giao diện
         renderEmployeeSelect();
+        renderStoreName();
         document.getElementById('workDaysStd').disabled = true;
         document.getElementById('salaryPerDay').disabled = true;
         // Ghi chú luôn hiển thị
@@ -327,6 +384,10 @@
                             for (let k in data.notes) {
                                 localStorage.setItem(k, data.notes[k]);
                             }
+                        }
+                        // Đồng bộ tên cửa hàng nếu có
+                        if (data.storeName !== undefined) {
+                            localStorage.setItem('storeName', data.storeName);
                         }
 
                         alert('Nhập dữ liệu thành công! Trang sẽ được tải lại.');

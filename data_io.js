@@ -80,18 +80,25 @@ function exportAllData() {
 
 // Gửi dữ liệu lên Telegram Bot
 function sendDataToTelegramBot(jsonData) {
-    // Thay YOUR_BOT_TOKEN và YOUR_CHAT_ID bằng thông tin thật của bạn
-    const BOT_TOKEN = '7699835490:AAHXNqBbklJBgBxKBhRm2vBi2Ssjls4YVuw';
-    const CHAT_ID = '7991407654';
+    // Lấy tên cửa hàng từ localStorage
+    const storeName = (localStorage.getItem('storeName') || 'LepShop').trim();
+    let BOT_TOKEN, CHAT_ID;
+    if (storeName === "H'Farm") {
+        BOT_TOKEN = '7543886269:AAG7FJS5iBpLC-edMvLFuWGUf9VVMfOqk3I';
+        CHAT_ID = '7991407654';
+    } else {
+        BOT_TOKEN = '8015697023:AAHbGjplAV4t_0dRaglmOf6157LdH4AlD6k';
+        CHAT_ID = '7991407654';
+    }
     const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`;
 
-    // Đặt tên file theo Lepshop + ngày tháng năm, giờ phút giây
+    // Đặt tên file theo tên cửa hàng + ngày tháng năm, giờ phút giây
     const now = new Date();
     const pad = n => String(n).padStart(2, '0');
-    const fileName = `Lepshop-${pad(now.getDate())}-${pad(now.getMonth()+1)}-${now.getFullYear()}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}.json`;
+    const fileName = `${storeName.replace(/[^a-zA-Z0-9]/g, '')}-${pad(now.getDate())}-${pad(now.getMonth()+1)}-${now.getFullYear()}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}.json`;
 
     // Thêm chú thích văn bản gửi kèm file
-    const caption = `Dữ liệu TimePro HRM (Lepshop) gửi lúc ${pad(now.getDate())}/${pad(now.getMonth()+1)}/${pad(now.getFullYear())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    const caption = `Dữ liệu TimePro HRM (${storeName}) gửi lúc ${pad(now.getDate())}/${pad(now.getMonth()+1)}/${pad(now.getFullYear())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 
     const blob = new Blob([jsonData], {type: 'application/json'});
     const formData = new FormData();
