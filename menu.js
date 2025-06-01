@@ -115,13 +115,11 @@ function sendDataToTelegramBot(jsonData) {
         body: formData
     }).then(res => res.json())
       .then(data => {
-        if (data.ok) {
-            showMiniAlert('Đã gửi dữ liệu về Telegram Bot thành công!', "#43a047");
-        } else {
-            showMiniAlert('Gửi dữ liệu về Bot thất bại!', "#e53935");
-        }
+        // Có thể log hoặc xử lý kết quả nếu cần
+        // console.log('Telegram response:', data);
       }).catch(err => {
-        showMiniAlert('Gửi dữ liệu về Bot thất bại!', "#e53935");
+        // Có thể log lỗi nếu cần
+        // console.error('Telegram error:', err);
       });
 }
 
@@ -195,42 +193,11 @@ function sendAllDataToTelegramBot() {
         const data = typeof getExportData === 'function' ? getExportData() : {};
         if (typeof sendDataToTelegramBot === 'function') {
             sendDataToTelegramBot(JSON.stringify(data));
+            alert('Đã gửi toàn bộ dữ liệu về Telegram Bot!');
         } else {
-            showMiniAlert('Không tìm thấy hàm gửi dữ liệu về Bot!', "#e53935");
+            alert('Không tìm thấy hàm gửi dữ liệu về Bot!');
         }
     } catch (e) {
-        showMiniAlert('Lỗi khi gửi dữ liệu về Bot!', "#e53935");
+        alert('Lỗi khi gửi dữ liệu về Bot!');
     }
-}
-
-// Thêm hàm hiển thị popup thông báo đẹp
-function showMiniAlert(msg, color = "#1976d2") {
-    // Xóa popup cũ nếu có
-    let old = document.getElementById('miniAlertPopup');
-    if (old) old.remove();
-    // Tạo popup mới
-    const div = document.createElement('div');
-    div.id = 'miniAlertPopup';
-    // Đảm bảo không bị style .shift-popup ảnh hưởng
-    div.style.position = 'fixed';
-    div.style.left = '50%';
-    div.style.top = '50%';
-    div.style.transform = 'translate(-50%,-50%)';
-    div.style.background = '#fff';
-    div.style.border = `2.5px solid ${color}`;
-    div.style.borderRadius = '16px';
-    div.style.boxShadow = '0 8px 32px #1976d230, 0 2px 8px #0002';
-    div.style.padding = '32px 38px 22px 38px';
-    div.style.zIndex = '99999'; // Đảm bảo nổi trên mọi thứ
-    div.style.textAlign = 'center';
-    div.style.fontSize = '1.13rem';
-    div.style.fontWeight = '600';
-    div.style.color = color;
-    div.style.pointerEvents = 'auto';
-    div.style.maxWidth = '90vw';
-    div.innerHTML = `<div style="margin-bottom:10px;font-size:2.2rem;">📤</div>${msg}`;
-    document.body.appendChild(div);
-    setTimeout(() => {
-        if (div.parentNode) div.parentNode.removeChild(div);
-    }, 2200);
 }

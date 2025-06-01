@@ -622,8 +622,9 @@
                                 // Nếu dư công thì cộng thêm số công dư * tiền 1 ngày công
                                 salary = baseSalary + ((totalCa - workDaysStd) * salaryPerDay);
                             } else {
-                                salary = totalCa * salaryPerDay;
-                                if (salary > baseSalary) salary = baseSalary;
+                                // Nếu thiếu công thì trừ đi số ngày thiếu * tiền 1 ngày công
+                                salary = baseSalary - ((workDaysStd - totalCa) * salaryPerDay);
+                                if (salary < 0) salary = 0;
                             }
                             totalSalary = salary;
                         }
