@@ -60,18 +60,27 @@ function getExportData() {
         workSchedules: JSON.parse(localStorage.getItem('workSchedules') || '{}'),
         scheduleShiftsByMonth: JSON.parse(localStorage.getItem('scheduleShiftsByMonth') || '{}'),
         workScheduleWeekTemplate: JSON.parse(localStorage.getItem('workScheduleWeekTemplate') || '{}'),
-        workScheduleWeekNames: JSON.parse(localStorage.getItem('workScheduleWeekNames') || '{}')
+        workScheduleWeekNames: JSON.parse(localStorage.getItem('workScheduleWeekNames') || '{}'),
+        // Thêm tên cửa hàng vào dữ liệu xuất
+        storeName: localStorage.getItem('storeName') || ''
     };
 }
 
 // Xuất file JSON
 function exportAllData() {
     const data = getExportData();
+    // Lấy tên cửa hàng từ localStorage
+    const storeName = (localStorage.getItem('storeName') || 'LepShop').trim();
+    // Đặt tên file theo tên cửa hàng + ngày tháng năm, giờ phút giây
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const fileName = `${storeName.replace(/[^a-zA-Z0-9]/g, '')}-${pad(now.getDate())}-${pad(now.getMonth()+1)}-${now.getFullYear()}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}.json`;
+
     const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'qlnv_data.json';
+    a.download = fileName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -209,6 +218,11 @@ function importAllData(jsonData) {
         if (data.workScheduleWeekTemplate) localStorage.setItem('workScheduleWeekTemplate', JSON.stringify(data.workScheduleWeekTemplate));
         if (data.workScheduleWeekNames) localStorage.setItem('workScheduleWeekNames', JSON.stringify(data.workScheduleWeekNames));
         // Sau khi nhập xong có thể reload lại trang hoặc cập nhật giao diện nếu cần
+
+        // Đồng bộ tên cửa hàng nếu có
+        if (data.storeName !== undefined) {
+            localStorage.setItem('storeName', data.storeName);
+        }
 
         // Phát tín hiệu đồng bộ cho các tab khác
         if (window.localStorage) {

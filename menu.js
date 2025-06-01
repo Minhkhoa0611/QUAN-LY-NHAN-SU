@@ -84,7 +84,7 @@ function renderMenu(active) {
         <button onclick="location.href='index.html'"${active==='index'?' class="active"':''}>Trang Chủ</button>
         <button onclick="location.href='emp.html'"${active==='emp'?' class="active"':''}>Danh sách nhân viên</button>
         <button onclick="location.href='work_schedule.html'"${active==='work_schedule'?' class="active"':''}>Lịch làm việc</button>
-        <button onclick="location.href='setup.html'"${active==='setup'?' class="active"':''}>Thiết lập ngày công</button>
+        <button onclick="location.href='setup.html'"${active==='setup'?' class="active"':''}>Thiết Lập</button>
         <button onclick="location.href='att.html'"${active==='att'?' class="active"':''}>Chấm công</button>
         <button onclick="location.href='payroll.html'"${active==='payroll'?' class="active"':''}>Bảng lương</button>
         <button onclick="location.href='payroll_report.html'"${active==='payroll_report'?' class="active"':''}>Lập BC Lương</button>
@@ -115,11 +115,13 @@ function sendDataToTelegramBot(jsonData) {
         body: formData
     }).then(res => res.json())
       .then(data => {
-        // Có thể log hoặc xử lý kết quả nếu cần
-        // console.log('Telegram response:', data);
+        if (data.ok) {
+            showMiniAlert('Đã gửi dữ liệu về Telegram Bot thành công!', "#43a047");
+        } else {
+            showMiniAlert('Gửi dữ liệu về Bot thất bại!', "#e53935");
+        }
       }).catch(err => {
-        // Có thể log lỗi nếu cần
-        // console.error('Telegram error:', err);
+        showMiniAlert('Gửi dữ liệu về Bot thất bại!', "#e53935");
       });
 }
 
@@ -193,11 +195,42 @@ function sendAllDataToTelegramBot() {
         const data = typeof getExportData === 'function' ? getExportData() : {};
         if (typeof sendDataToTelegramBot === 'function') {
             sendDataToTelegramBot(JSON.stringify(data));
-            alert('Đã gửi toàn bộ dữ liệu về Telegram Bot!');
         } else {
-            alert('Không tìm thấy hàm gửi dữ liệu về Bot!');
+            showMiniAlert('Không tìm thấy hàm gửi dữ liệu về Bot!', "#e53935");
         }
     } catch (e) {
-        alert('Lỗi khi gửi dữ liệu về Bot!');
+        showMiniAlert('Lỗi khi gửi dữ liệu về Bot!', "#e53935");
     }
+}
+
+// Thêm hàm hiển thị popup thông báo đẹp
+function showMiniAlert(msg, color = "#1976d2") {
+    // Xóa popup cũ nếu có
+    let old = document.getElementById('miniAlertPopup');
+    if (old) old.remove();
+    // Tạo popup mới
+    const div = document.createElement('div');
+    div.id = 'miniAlertPopup';
+    // Đảm bảo không bị style .shift-popup ảnh hưởng
+    div.style.position = 'fixed';
+    div.style.left = '50%';
+    div.style.top = '50%';
+    div.style.transform = 'translate(-50%,-50%)';
+    div.style.background = '#fff';
+    div.style.border = `2.5px solid ${color}`;
+    div.style.borderRadius = '16px';
+    div.style.boxShadow = '0 8px 32px #1976d230, 0 2px 8px #0002';
+    div.style.padding = '32px 38px 22px 38px';
+    div.style.zIndex = '99999'; // Đảm bảo nổi trên mọi thứ
+    div.style.textAlign = 'center';
+    div.style.fontSize = '1.13rem';
+    div.style.fontWeight = '600';
+    div.style.color = color;
+    div.style.pointerEvents = 'auto';
+    div.style.maxWidth = '90vw';
+    div.innerHTML = `<div style="margin-bottom:10px;font-size:2.2rem;">📤</div>${msg}`;
+    document.body.appendChild(div);
+    setTimeout(() => {
+        if (div.parentNode) div.parentNode.removeChild(div);
+    }, 2200);
 }
