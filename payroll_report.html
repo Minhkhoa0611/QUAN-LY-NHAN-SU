@@ -22,7 +22,13 @@
     <div class="container">
         <h2>Lập Báo Cáo Lương</h2>
         <div style="margin-bottom:18px;">
-            <label style="font-weight:500;color:#1976d2;">Chọn tháng: </label>
+            <label style="font-weight:500;color:#1976d2;">Chọn cửa hàng: </label>
+            <select id="reportStoreSelect" style="font-size:17px;padding:6px 16px;min-width:120px;border-radius:6px;" onchange="renderPayrollReport()">
+                <option value="">--Tất cả--</option>
+                <option value="LepShop">LepShop</option>
+                <option value="H'farm">H'farm</option>
+            </select>
+            <label style="font-weight:500;color:#1976d2;margin-left:12px;">Chọn tháng: </label>
             <input type="month" id="reportMonth" style="font-size:17px;padding:6px 16px;min-width:160px;border-radius:6px;">
             <button onclick="renderPayrollReport()" style="margin-left:12px;padding:6px 18px;background:#1976d2;color:#fff;border:none;border-radius:4px;cursor:pointer;">Xem báo cáo</button>
         </div>
@@ -42,6 +48,9 @@
         }
         function renderPayrollReport() {
             let employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            // Lọc theo cửa hàng
+            const store = document.getElementById('reportStoreSelect').value;
+            if (store) employees = employees.filter(e => (e.store || '') === store);
             let attendanceByMonth = JSON.parse(localStorage.getItem('attendanceByMonth') || '{}');
             let workDaysStd = parseInt(localStorage.getItem('workDaysStd') || '26');
             let salaryPerDay = parseInt(localStorage.getItem('salaryPerDay') || '0');

@@ -114,7 +114,13 @@
         </div>
         <h2>Bảng lương tháng</h2>
         <div style="margin-bottom:18px;">
-            <label style="font-weight:500;color:#1976d2;">Chọn nhân viên: </label>
+            <label style="font-weight:500;color:#1976d2;">Chọn cửa hàng: </label>
+            <select id="payrollStoreSelect" style="font-size:17px;padding:6px 16px;min-width:120px;border-radius:6px;" onchange="renderPayrollEmpSelect();calcPayroll()">
+                <option value="">--Tất cả--</option>
+                <option value="LepShop">LepShop</option>
+                <option value="H'farm">H'farm</option>
+            </select>
+            <label style="font-weight:500;color:#1976d2;margin-left:12px;">Chọn nhân viên: </label>
             <select id="payrollEmpSelect" style="font-size:17px;padding:6px 16px;min-width:200px;border-radius:6px;" onchange="calcPayroll()"></select>
         </div>
         <div id="payrollTableWrap"></div>
@@ -128,9 +134,12 @@
 
         function renderPayrollEmpSelect() {
             const sel = document.getElementById('payrollEmpSelect');
+            const store = document.getElementById('payrollStoreSelect').value;
             const savedEmpId = localStorage.getItem('payroll_selectedEmpId');
-            sel.innerHTML = employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
-            if (savedEmpId && employees.some(e => e.id === savedEmpId)) {
+            let filtered = employees;
+            if (store) filtered = employees.filter(e => (e.store || '') === store);
+            sel.innerHTML = filtered.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+            if (savedEmpId && filtered.some(e => e.id === savedEmpId)) {
                 sel.value = savedEmpId;
             }
         }

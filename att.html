@@ -264,6 +264,12 @@
         </div>
         <h2>Chấm công theo tháng</h2>
         <div class="form-row">
+            <label style="width:130px;">Chọn cửa hàng:</label>
+            <select id="attStoreSelect" onchange="renderEmpSelect();renderAttendance();updateSalaryTypeDisplay()" style="font-size:18px;padding:8px 18px;min-width:180px;border-radius:8px;border:1.5px solid #b3d1f7;background:#f7fbff;color:#1976d2;font-weight:500;box-shadow:0 1px 6px #1976d210;">
+                <option value="">--Tất cả--</option>
+                <option value="LepShop">LepShop</option>
+                <option value="H'farm">H'farm</option>
+            </select>
             <label>Chọn nhân viên:</label>
             <select id="empSelect" onchange="renderAttendance();updateSalaryTypeDisplay()" style="font-size:20px;padding:8px 18px;min-width:220px;border-radius:8px;">
             </select>
@@ -360,9 +366,12 @@
 
         function renderEmpSelect() {
             const sel = document.getElementById('empSelect');
+            const store = document.getElementById('attStoreSelect').value;
             const savedEmpId = localStorage.getItem('att_selectedEmpId');
-            sel.innerHTML = employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
-            if (savedEmpId && employees.some(e => e.id === savedEmpId)) {
+            let filtered = employees;
+            if (store) filtered = employees.filter(e => (e.store || '') === store);
+            sel.innerHTML = filtered.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+            if (savedEmpId && filtered.some(e => e.id === savedEmpId)) {
                 sel.value = savedEmpId;
             }
         }

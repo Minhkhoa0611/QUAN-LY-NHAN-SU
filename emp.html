@@ -147,6 +147,13 @@
                 <input id="empPos" class="emp-input">
             </div>
             <div class="form-row">
+                <label>Cửa hàng:</label>
+                <select id="empStore" class="emp-input" required>
+                    <!-- Options sẽ được render động -->
+                </select>
+                <label style="width:110px"></label>
+            </div>
+            <div class="form-row">
                 <label>Hình thức trả lương:</label>
                 <select id="empSalaryType" required onchange="toggleSalaryInput()" class="emp-input">
                     <option value="base">Lương cơ bản</option>
@@ -160,7 +167,12 @@
         <table id="empTable">
             <thead>
                 <tr>
-                    <th>Tên</th><th>Chức vụ</th><th>Hình thức trả lương</th><th>Lương cơ bản</th><th>Hành động</th>
+                    <th>Tên</th>
+                    <th>Chức vụ</th>
+                    <th>Cửa hàng</th>
+                    <th>Hình thức trả lương</th>
+                    <th>Lương cơ bản</th>
+                    <th>Hành động</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -171,6 +183,51 @@
         let attendanceByMonth = JSON.parse(localStorage.getItem('attendanceByMonth') || '{}');
         let editEmpId = null;
 
+        function renderStoreOptions(selectedValue = '') {
+            // Chỉ cho phép chọn 2 cửa hàng: LepShop và H'farm
+            const storeList = ["LepShop", "H'farm"];
+            const empStore = document.getElementById('empStore');
+            empStore.innerHTML = '<option value="">--Chọn cửa hàng--</option>';
+            storeList.forEach(store => {
+                const opt = document.createElement('option');
+                opt.value = store;
+                opt.textContent = store;
+                if (selectedValue === store) opt.selected = true;
+                empStore.appendChild(opt);
+            });
+            // Nếu có selectedValue mà không nằm trong 2 cửa hàng trên thì thêm vào cuối
+            if (selectedValue && !storeList.includes(selectedValue)) {
+                const opt = document.createElement('option');
+                opt.value = selectedValue;
+                opt.textContent = selectedValue;
+                opt.selected = true;
+                empStore.appendChild(opt);
+            }
+        }
+
+        // --- Tự động cập nhật trường 'store' cho nhân viên theo ID ---
+        function autoUpdateEmployeeStores() {
+            // ID cho H'farm
+            const hfarmIds = [
+                "1748743379562",
+                "1748743529323"
+            ];
+            employees.forEach(emp => {
+                // Nếu nhân viên chưa có trường store hoặc store rỗng/null thì tự động gán
+                if (!emp.store || emp.store === '') {
+                    if (hfarmIds.includes(emp.id)) {
+                        emp.store = "H'farm";
+                    } else {
+                        emp.store = "LepShop";
+                    }
+                }
+                // Nếu đã có store thì giữ nguyên để người dùng có thể chỉnh sửa
+            });
+            saveEmployees();
+        }
+        // Gọi hàm này khi trang load để đảm bảo dữ liệu đúng
+        autoUpdateEmployeeStores();
+
         function renderEmployees() {
             const tbody = document.querySelector('#empTable tbody');
             tbody.innerHTML = '';
@@ -178,6 +235,7 @@
                 tbody.innerHTML += `<tr>
                     <td>${emp.name}</td>
                     <td>${emp.position}</td>
+                    <td>${emp.store || ''}</td>
                     <td>${emp.salary_type === 'shift' ? 'Lương theo ca' : 'Lương cơ bản'}</td>
                     <td>${emp.salary_type === 'base' ? formatVND(emp.base_salary) : '<span style="color:#888">--</span>'}</td>
                     <td>
@@ -193,6 +251,7 @@
             if (!emp) return;
             empName.value = emp.name;
             empPos.value = emp.position;
+            renderStoreOptions(emp.store || '');
             empSalaryType.value = emp.salary_type || 'base';
             toggleSalaryInput();
             empSalary.value = emp.salary_type === 'base' ? formatVND(emp.base_salary) : '';
@@ -201,7 +260,8 @@
         }
 
         function deleteEmployee(empId) {
-            if (!confirm('Bạn có chắc muốn xóa nhân viên này?')) return;
+            // Bỏ xác nhận xóa
+            // if (!confirm('Bạn có chắc muốn xóa nhân viên này?')) return;
             employees = employees.filter(e => e.id !== empId);
             localStorage.setItem('employees', JSON.stringify(employees));
             // Xóa dữ liệu chấm công liên quan
@@ -270,11 +330,13 @@
             e.preventDefault();
             const salaryType = empSalaryType.value;
             const salary = salaryType === 'base' ? parseCurrency(empSalary.value) : 0;
+            const store = empStore.value;
             if (editEmpId) {
                 // Cập nhật
                 const emp = employees.find(e => e.id === editEmpId);
                 emp.name = empName.value;
                 emp.position = empPos.value;
+                emp.store = store;
                 emp.salary_type = salaryType;
                 emp.base_salary = salary;
                 editEmpId = null;
@@ -285,14 +347,16 @@
                     id: Date.now().toString(),
                     name: empName.value,
                     position: empPos.value,
+                    store: store,
                     salary_type: salaryType,
-                    base_salary: salary // Không set mặc định 800000
+                    base_salary: salary
                 };
                 employees.push(emp);
             }
             saveEmployees();
             renderEmployees();
             this.reset();
+            renderStoreOptions();
             empSalaryType.value = 'base';
             toggleSalaryInput();
             if (typeof autoSendDataToTelegramBot === 'function') autoSendDataToTelegramBot();
@@ -477,6 +541,7 @@
         window.toggleSalaryInput = toggleSalaryInput;
         toggleSalaryInput();
 
+        renderStoreOptions();
         renderEmployees();
         
     </script>

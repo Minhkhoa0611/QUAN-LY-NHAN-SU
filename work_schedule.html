@@ -431,6 +431,12 @@
     <div class="container">
         <h2>Lịch Làm Việc Theo Tháng</h2>
         <div class="form-row">
+            <label>Chọn cửa hàng:</label>
+            <select id="wsStoreSelect" onchange="renderEmpSelect();renderWorkSchedule()">
+                <option value="">--Tất cả--</option>
+                <option value="LepShop">LepShop</option>
+                <option value="H'farm">H'farm</option>
+            </select>
             <label>Chọn nhân viên:</label>
             <select id="wsEmpSelect" onchange="renderWorkSchedule()"></select>
             <label>Chọn tháng:</label>
@@ -528,7 +534,10 @@
 
         function renderEmpSelect() {
             const sel = document.getElementById('wsEmpSelect');
-            sel.innerHTML = employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+            const store = document.getElementById('wsStoreSelect').value;
+            let filtered = employees;
+            if (store) filtered = employees.filter(e => (e.store || '') === store);
+            sel.innerHTML = filtered.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
         }
 
         function daysInMonth(month) {
