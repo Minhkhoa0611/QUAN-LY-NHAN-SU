@@ -11,13 +11,42 @@ function renderMenu(active) {
         .navbar {
             background: #1976d2;
             color: #fff;
-            padding: 14px 32px;
+            padding: 0 32px;
             display: flex;
-            gap: 20px;
-            box-shadow: 0 2px 8px #0002;
+            align-items: center;
+            min-height: 64px;
+            gap: 0;
+            box-shadow: 0 4px 16px #0001;
             border-bottom-left-radius: 18px;
             border-bottom-right-radius: 18px;
+            position: relative;
+            z-index: 10;
+        }
+        .navbar .navbar-logo {
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 1.5px;
+            color: #fff;
+            margin-right: 32px;
+            display: flex;
             align-items: center;
+            gap: 8px;
+            user-select: none;
+        }
+        .navbar .navbar-logo-icon {
+            width: 32px;
+            height: 32px;
+            background: #fff2;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        .navbar .navbar-menu {
+            display: flex;
+            gap: 8px;
+            flex: 1;
         }
         .navbar button {
             background: none;
@@ -25,14 +54,18 @@ function renderMenu(active) {
             color: #fff;
             font-size: 16px;
             cursor: pointer;
-            padding: 8px 18px;
-            border-radius: 6px;
-            transition: background 0.2s;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: background 0.18s, color 0.18s, box-shadow 0.18s;
             font-weight: 500;
             letter-spacing: 0.5px;
+            margin: 0 2px;
+            position: relative;
         }
         .navbar button.active, .navbar button:hover {
-            background: #1565c0;
+            background: #fff;
+            color: #1976d2;
+            box-shadow: 0 2px 8px #1976d233;
         }
         .navbar .menu-export-btn {
             background: #43a047;
@@ -40,16 +73,18 @@ function renderMenu(active) {
             border: none;
             font-size: 16px;
             cursor: pointer;
-            padding: 8px 16px;
-            border-radius: 4px;
-            margin-left: auto;
-            transition: background 0.2s;
+            padding: 10px 18px;
+            border-radius: 8px;
+            margin-left: 16px;
+            transition: background 0.18s, color 0.18s, box-shadow 0.18s;
             font-weight: 500;
             letter-spacing: 0.5px;
             display: inline-block;
+            box-shadow: 0 2px 8px #43a04733;
         }
         .navbar .menu-export-btn:hover {
             background: #388e3c;
+            color: #fff;
         }
         .navbar .menu-import-btn {
             background: #ff9800;
@@ -57,21 +92,117 @@ function renderMenu(active) {
             border: none;
             font-size: 16px;
             cursor: pointer;
-            padding: 8px 16px;
-            border-radius: 4px;
+            padding: 10px 18px;
+            border-radius: 8px;
             margin-left: 10px;
-            transition: background 0.2s;
+            transition: background 0.18s, color 0.18s, box-shadow 0.18s;
             font-weight: 500;
             letter-spacing: 0.5px;
             display: inline-block;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 2px 8px #ff980033;
         }
         .navbar .menu-import-btn:hover {
-            background: #ffb74d;
+            background: #fb8c00;
+            color: #fff;
+        }
+        .navbar .menu-data-dropdown {
+            position: relative;
+            margin-left: 16px;
+        }
+        .navbar .menu-data-btn {
+            background: #1565c0;
+            color: #fff;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.18s;
+        }
+        .navbar .menu-data-btn:hover,
+        .navbar .menu-data-btn:focus {
+            background: #1976d2;
+        }
+        .navbar .menu-data-list {
+            display: none;
+            position: absolute;
+            top: 110%;
+            right: 0;
+            min-width: 180px;
+            background: #fff;
+            color: #1976d2;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px #0002;
+            z-index: 100;
+            flex-direction: column;
+            padding: 6px 0;
+            animation: fadeInMenu 0.18s;
+        }
+        .navbar .menu-data-dropdown.open .menu-data-list {
+            display: flex;
+        }
+        .navbar .menu-data-list button {
+            background: none;
+            border: none;
+            color: #1976d2;
+            font-size: 15px;
+            text-align: left;
+            width: 100%;
+            padding: 10px 20px;
+            border-radius: 0;
+            margin: 0;
+            transition: background 0.15s, color 0.15s;
+            font-weight: 500;
+        }
+        .navbar .menu-data-list button:hover {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        .navbar .menu-data-list .menu-import-btn {
+            color: #ff9800;
+        }
+        .navbar .menu-data-list .menu-export-btn {
+            color: #43a047;
+        }
+        .navbar .menu-data-list .menu-telegram-btn {
+            color: #0088cc;
         }
         .navbar input[type="file"] {
             display: none;
+        }
+        @keyframes fadeInMenu {
+            from { opacity: 0; transform: translateY(10px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+        @media (max-width: 900px) {
+            .navbar {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 0 10px;
+                min-height: unset;
+            }
+            .navbar .navbar-logo {
+                margin: 10px 0 0 0;
+            }
+            .navbar .navbar-menu {
+                flex-wrap: wrap;
+                gap: 4px;
+                margin-bottom: 8px;
+            }
+            .navbar .menu-export-btn, .navbar .menu-import-btn {
+                margin-left: 0;
+            }
+            .navbar .menu-data-dropdown {
+                margin-left: 0;
+                margin-top: 8px;
+            }
         }
         `;
         document.head.appendChild(style);
@@ -81,21 +212,56 @@ function renderMenu(active) {
     const nav = document.createElement('div');
     nav.className = 'navbar';
     nav.innerHTML = `
-        <button onclick="location.href='index.html'"${active==='index'?' class="active"':''}>Trang Chủ</button>
-        <button onclick="location.href='emp.html'"${active==='emp'?' class="active"':''}>Danh sách nhân viên</button>
-        <button onclick="location.href='work_schedule.html'"${active==='work_schedule'?' class="active"':''}>Lịch làm việc</button>
-        <button onclick="location.href='setup.html'"${active==='setup'?' class="active"':''}>Thiết Lập</button>
-        <button onclick="location.href='att.html'"${active==='att'?' class="active"':''}>Chấm công</button>
-        <button onclick="location.href='payroll.html'"${active==='payroll'?' class="active"':''}>Bảng lương</button>
-        <button onclick="location.href='payroll_report.html'"${active==='payroll_report'?' class="active"':''}>Lập BC Lương</button>
-        <button onclick="location.href='about-mksof.html'"${active==='about'?' class="active"':''}>Giới thiệu</button>
-        <button onclick="exportAllData()" class="menu-export-btn"${active==='export'?' class="active"':''}>Xuất dữ liệu</button>
-        <button type="button" class="menu-import-btn" onclick="document.getElementById('importDataInput').click()">Nhập dữ liệu</button>
-        <input id="importDataInput" type="file" accept=".json" onchange="importAllData && importAllData(event)">
-        <button type="button" class="menu-export-btn" style="background:#0088cc;margin-left:10px;" onclick="sendAllDataToTelegramBot()">Gửi dữ liệu về Bot</button>
+        <div class="navbar-logo">
+            <span class="navbar-logo-icon">🕒</span>
+            TimePro HRM
+        </div>
+        <div class="navbar-menu">
+            <button onclick="location.href='index.html'"${active==='index'?' class="active"':''}>Trang Chủ</button>
+            <button onclick="location.href='emp.html'"${active==='emp'?' class="active"':''}>Danh sách nhân viên</button>
+            <button onclick="location.href='work_schedule.html'"${active==='work_schedule'?' class="active"':''}>Lịch làm việc</button>
+            <button onclick="location.href='setup.html'"${active==='setup'?' class="active"':''}>Thiết Lập</button>
+            <button onclick="location.href='att.html'"${active==='att'?' class="active"':''}>Chấm công</button>
+            <button onclick="location.href='payroll.html'"${active==='payroll'?' class="active"':''}>Bảng lương</button>
+            <button onclick="location.href='payroll_report.html'"${active==='payroll_report'?' class="active"':''}>Lập BC Lương</button>
+            <button onclick="location.href='about-mksof.html'"${active==='about'?' class="active"':''}>Giới thiệu</button>
+        </div>
+        <div class="menu-data-dropdown" tabindex="0">
+            <button type="button" class="menu-data-btn" onclick="toggleMenuDataDropdown(event)">
+                ☰ Dữ liệu
+            </button>
+            <div class="menu-data-list">
+                <button onclick="exportAllData()" class="menu-export-btn"${active==='export'?' class="active"':''}>Xuất dữ liệu</button>
+                <button type="button" class="menu-import-btn" onclick="document.getElementById('importDataInput').click()">Nhập dữ liệu</button>
+                <input id="importDataInput" type="file" accept=".json" onchange="importAllData && importAllData(event)">
+                <button type="button" class="menu-telegram-btn" onclick="sendAllDataToTelegramBot()">Gửi dữ liệu về Bot</button>
+            </div>
+        </div>
     `;
     // Thêm menu vào đầu body
     document.body.insertBefore(nav, document.body.firstChild);
+
+    // Đóng dropdown khi click ngoài hoặc chuyển tab
+    document.querySelectorAll('.menu-data-dropdown').forEach(drop => {
+        drop.addEventListener('blur', function() {
+            setTimeout(() => drop.classList.remove('open'), 120);
+        });
+    });
+}
+
+// Thêm hàm toggle dropdown
+function toggleMenuDataDropdown(e) {
+    e.stopPropagation();
+    document.querySelectorAll('.menu-data-dropdown').forEach(drop => drop.classList.remove('open'));
+    const dropdown = e.currentTarget.parentElement;
+    dropdown.classList.toggle('open');
+    // Đóng khi click ngoài
+    if (dropdown.classList.contains('open')) {
+        document.addEventListener('mousedown', closeDropdown, { once: true });
+    }
+    function closeDropdown(ev) {
+        if (!dropdown.contains(ev.target)) dropdown.classList.remove('open');
+    }
 }
 
 // Thêm hàm gửi dữ liệu về Telegram Bot
