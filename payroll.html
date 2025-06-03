@@ -149,6 +149,11 @@
             calcPayroll();
         });
 
+        // Gọi khi đổi tháng lương
+        function onPayrollMonthChange() {
+            calcPayroll();
+        }
+
         function savePayrollInput(empId, month, field, value) {
             if (!payrollInputs[empId]) payrollInputs[empId] = {};
             if (!payrollInputs[empId][month]) payrollInputs[empId][month] = {};
