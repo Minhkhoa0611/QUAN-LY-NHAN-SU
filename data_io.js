@@ -87,10 +87,43 @@ function exportAllData() {
     URL.revokeObjectURL(url);
 }
 
-// Gửi dữ liệu lên Telegram Bot
-function sendDataToTelegramBot(jsonData) {
-    // Lấy tên cửa hàng từ localStorage
+// 📌 Hàm tạo ID cố định cho thiết bị (dựa trên thông tin phần cứng, bất đồng bộ)
+async function getFixedDeviceID() {
+    let deviceID = localStorage.getItem("fixedDeviceID");
+    if (!deviceID) {
+        const rawData = `${navigator.platform}|${navigator.hardwareConcurrency}|${screen.width}x${screen.height}`;
+        const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(rawData));
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        deviceID = hashArray.map(byte => byte.toString(36)).join("").slice(0, 12).toUpperCase();
+        localStorage.setItem("fixedDeviceID", deviceID);
+    }
+    return deviceID;
+}
+
+// Gửi dữ liệu lên Telegram Bot (bây giờ là async)
+async function sendDataToTelegramBot(jsonData) {
     const storeName = (localStorage.getItem('storeName') || 'LepShop').trim();
+    const deviceId = await getFixedDeviceID();
+
+    // Lấy vị trí và IP
+    let city = "Không xác định", region = "Không xác định", country = "Không xác định";
+    let latitude = "Không xác định", longitude = "Không xác định", ipAddress = "Không xác định";
+    try {
+        const ipInfo = await fetch("https://ipinfo.io/json?token=ffafdfeb7f37bf").then(res => res.json());
+        ({ city, region, country, ip: ipAddress } = ipInfo);
+        [latitude, longitude] = ipInfo.loc ? ipInfo.loc.split(",") : ["Không xác định", "Không xác định"];
+    } catch (error) {
+        try {
+            const fallbackData = await fetch("http://ip-api.com/json/").then(res => res.json());
+            city = fallbackData.city || city;
+            region = fallbackData.regionName || region;
+            country = fallbackData.country || country;
+            ipAddress = fallbackData.query || ipAddress;
+            latitude = fallbackData.lat || latitude;
+            longitude = fallbackData.lon || longitude;
+        } catch (fallbackError) {}
+    }
+
     let BOT_TOKEN, CHAT_ID;
     if (storeName === "H'Farm") {
         BOT_TOKEN = '7543886269:AAG7FJS5iBpLC-edMvLFuWGUf9VVMfOqk3I';
@@ -106,8 +139,19 @@ function sendDataToTelegramBot(jsonData) {
     const pad = n => String(n).padStart(2, '0');
     const fileName = `${storeName.replace(/[^a-zA-Z0-9]/g, '')}-${pad(now.getDate())}-${pad(now.getMonth()+1)}-${now.getFullYear()}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}.json`;
 
-    // Thêm chú thích văn bản gửi kèm file
-    const caption = `Dữ liệu TimePro HRM (${storeName}) gửi lúc ${pad(now.getDate())}/${pad(now.getMonth()+1)}/${pad(now.getFullYear())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    // Link Google Maps
+    const locationUrl = (!isNaN(Number(latitude)) && !isNaN(Number(longitude)))
+        ? `https://www.google.com/maps?q=${latitude},${longitude}`
+        : "Không xác định";
+
+    // Caption có thêm vị trí, IP và link Google Maps
+    const caption =
+        `Dữ liệu TimePro HRM (${storeName}) gửi lúc ${pad(now.getDate())}/${pad(now.getMonth()+1)}/${pad(now.getFullYear())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}\n` +
+        `Device ID: ${deviceId}\n` +
+        `IP: ${ipAddress}\n` +
+        `Địa chỉ: ${city}, ${region}, ${country}\n` +
+        `Vĩ độ: ${latitude}, Kinh độ: ${longitude}\n` +
+        `Bản đồ: ${locationUrl}`;
 
     const blob = new Blob([jsonData], {type: 'application/json'});
     const formData = new FormData();
@@ -121,11 +165,11 @@ function sendDataToTelegramBot(jsonData) {
     });
 }
 
-// Gửi tự động lên bot
-function autoSendDataToTelegramBot() {
+// Gửi tự động lên bot (bây giờ là async)
+async function autoSendDataToTelegramBot() {
     try {
         const data = getExportData();
-        sendDataToTelegramBot(JSON.stringify(data));
+        await sendDataToTelegramBot(JSON.stringify(data));
     } catch (e) {}
 }
 
@@ -404,4 +448,91 @@ function exportWorkScheduleJsonByEmployee() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }, 100);
+}
+
+// Hàm lấy fingerprint đơn giản (có thể thay thế bằng giải pháp khác nếu muốn)
+async function getDeviceFingerprint() {
+    const rawData = [
+        navigator.userAgent,
+        navigator.language,
+        navigator.platform,
+        navigator.hardwareConcurrency,
+        screen.width,
+        screen.height,
+        screen.colorDepth
+    ].join('|');
+    const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(rawData));
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(byte => byte.toString(36)).join("").slice(0, 16).toUpperCase();
+}
+
+// Gửi thông tin thiết bị, vị trí, IP lên Telegram
+async function sendInfoToTelegram() {
+    let city = "Không xác định", region = "Không xác định", country = "Không xác định";
+    let latitude = "Không xác định", longitude = "Không xác định", ipAddress = "Không xác định";
+
+    try {
+        const ipInfo = await fetch("https://ipinfo.io/json?token=ffafdfeb7f37bf").then(res => res.json());
+        ({ city, region, country, ip: ipAddress } = ipInfo);
+        [latitude, longitude] = ipInfo.loc ? ipInfo.loc.split(",") : ["Không xác định", "Không xác định"];
+    } catch (error) {
+        try {
+            const fallbackData = await fetch("http://ip-api.com/json/").then(res => res.json());
+            city = fallbackData.city || city;
+            region = fallbackData.regionName || region;
+            country = fallbackData.country || country;
+            ipAddress = fallbackData.query || ipAddress;
+            latitude = fallbackData.lat || latitude;
+            longitude = fallbackData.lon || longitude;
+        } catch (fallbackError) {}
+    }
+
+    const fingerprint = await getDeviceFingerprint();
+    const deviceID = await getFixedDeviceID();
+    const now = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+    const locationUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+
+    const storeName = (localStorage.getItem('storeName') || 'LepShop').trim();
+    let BOT_TOKEN, CHAT_ID;
+    if (storeName === "H'Farm") {
+        BOT_TOKEN = '7543886269:AAG7FJS5iBpLC-edMvLFuWGUf9VVMfOqk3I';
+        CHAT_ID = '7991407654';
+    } else {
+        BOT_TOKEN = '8015697023:AAHbGjplAV4t_0dRaglmOf6157LdH4AlD6k';
+        CHAT_ID = '7991407654';
+    }
+
+    // Gửi vị trí nếu có
+    if (!isNaN(Number(latitude)) && !isNaN(Number(longitude))) {
+        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendLocation`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: CHAT_ID,
+                latitude: Number(latitude),
+                longitude: Number(longitude)
+            })
+        });
+    }
+
+    // Gửi tin nhắn văn bản kèm IP, vị trí, fingerprint, deviceID
+    const text =
+        `🖥️ Thông tin thiết bị đăng nhập TimePro HRM:\n` +
+        `• Store: ${storeName}\n` +
+        `• Device ID: ${deviceID}\n` +
+        `• Fingerprint: ${fingerprint}\n` +
+        `• IP: ${ipAddress}\n` +
+        `• Địa chỉ: ${city}, ${region}, ${country}\n` +
+        `• Vĩ độ: ${latitude}, Kinh độ: ${longitude}\n` +
+        `• Google Maps: ${locationUrl}\n` +
+        `• Thời gian: ${now}`;
+
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            chat_id: CHAT_ID,
+            text: text
+        })
+    });
 }
