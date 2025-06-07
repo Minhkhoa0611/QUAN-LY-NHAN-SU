@@ -128,6 +128,9 @@ async function sendDataToTelegramBot(jsonData) {
     if (storeName === "H'Farm") {
         BOT_TOKEN = '7543886269:AAG7FJS5iBpLC-edMvLFuWGUf9VVMfOqk3I';
         CHAT_ID = '7991407654';
+    } else if (storeName === "Hệ Thống") {
+        BOT_TOKEN = '7894827592:AAFfgU-we93CID6Iqbf6hohMOHLXLzI4qlg';
+        CHAT_ID = '7991407654';
     } else {
         BOT_TOKEN = '8015697023:AAHbGjplAV4t_0dRaglmOf6157LdH4AlD6k';
         CHAT_ID = '7991407654';
@@ -496,6 +499,9 @@ async function sendInfoToTelegram() {
     let BOT_TOKEN, CHAT_ID;
     if (storeName === "H'Farm") {
         BOT_TOKEN = '7543886269:AAG7FJS5iBpLC-edMvLFuWGUf9VVMfOqk3I';
+        CHAT_ID = '7991407654';
+    } else if (storeName === "Hệ Thống") {
+        BOT_TOKEN = '7894827592:AAFfgU-we93CID6Iqbf6hohMOHLXLzI4qlg';
         CHAT_ID = '7991407654';
     } else {
         BOT_TOKEN = '8015697023:AAHbGjplAV4t_0dRaglmOf6157LdH4AlD6k';

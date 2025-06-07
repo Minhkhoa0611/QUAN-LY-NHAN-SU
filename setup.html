@@ -163,6 +163,7 @@
             <select id="storeNameInput" onchange="onStoreNameChange()" style="width: 160px; padding: 8px 12px; border-radius: 6px; border: 1.5px solid #bcdffb; font-size: 1.08rem; background: #f6fbff;">
                 <option value="LepShop">LepShop</option>
                 <option value="H'Farm">H'Farm</option>
+                <option value="Hệ Thống">Hệ Thống</option>
             </select>
         </div>
         <div class="employee-select-row">
@@ -383,7 +384,7 @@
         // Hiển thị tên cửa hàng từ localStorage, mặc định là 'LepShop'
         function renderStoreName() {
             let storeName = localStorage.getItem('storeName');
-            if (!storeName || (storeName !== "LepShop" && storeName !== "H'Farm")) {
+            if (!storeName || (storeName !== "LepShop" && storeName !== "H'Farm" && storeName !== "Hệ Thống")) {
                 storeName = 'LepShop';
                 localStorage.setItem('storeName', storeName);
             }

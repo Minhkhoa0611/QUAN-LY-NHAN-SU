@@ -215,6 +215,13 @@
             width: 38px;
             height: 38px;
         }
+        /* Làm nổi bật cột ngày hôm nay */
+        .today-col {
+            background: #ffe0ef !important; /* màu hồng nhạt */
+            color: #d32f2f !important;
+            font-weight: bold;
+            box-shadow: 0 0 8px #ffd6e6 inset;
+        }
         /* Responsive */
         @media (max-width: 900px) {
             .container { padding: 12px 2vw; }
@@ -502,6 +509,11 @@
             const month = getCurrentMonth();
             const days = daysInMonth(month);
             const empId = document.getElementById('empSelect').value;
+            // Xác định ngày hôm nay
+            const now = new Date();
+            const [curY, curM, curD] = [now.getFullYear(), now.getMonth() + 1, now.getDate()];
+            const [tableY, tableM] = month.split('-').map(Number);
+
             if (!attendanceByMonth[month]) attendanceByMonth[month] = {};
             let html = '';
             if (employees.length === 0) {
@@ -559,7 +571,9 @@
                 html += `<th style="min-width:110px">Thời gian</th>`;
                 for(let d=1; d<=days; ++d) {
                     const [y, m] = month.split('-').map(Number);
-                    html += `<th>${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}</th>`;
+                    // Kiểm tra nếu là ngày hôm nay thì thêm class
+                    let isToday = (curY === y && curM === m && curD === d);
+                    html += `<th${isToday ? ' class="today-col"' : ''}>${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}</th>`;
                 }
                 html += `<th style="min-width:90px">Ca tổng</th><th style="min-width:120px">Tổng công</th><th style="min-width:120px">Lương từng ca</th><th style="min-width:140px">Lương thực nhận</th>`;
                 html += `</tr>`;
@@ -570,7 +584,8 @@
                     const [y, m] = month.split('-').map(Number);
                     const date = new Date(y, m-1, d);
                     const weekday = ['CN','T2','T3','T4','T5','T6','T7'][date.getDay()];
-                    html += `<th>${weekday}</th>`;
+                    let isToday = (curY === y && curM === m && curD === d);
+                    html += `<th${isToday ? ' class="today-col"' : ''}>${weekday}</th>`;
                 }
                 html += `<th></th><th></th><th></th><th></th>`;
                 html += `</tr></thead><tbody>`;
@@ -591,7 +606,9 @@
                         let shiftVal = shifts[s]?.half ? 0.5 : 1;
                         if (checked) rowWork += shiftVal;
                         if (empAtt[d] && empAtt[d].length > 0) daysWithWork.add(d);
-                        html += `<td>
+                        // Kiểm tra nếu là ngày hôm nay thì thêm class
+                        let isToday = (curY === tableY && curM === tableM && curD === d);
+                        html += `<td${isToday ? ' class="today-col"' : ''}>
                             <input type="checkbox" onchange="toggleAttendanceShift('${emp.id}',${d},${s},this.checked)" ${checked}>
                             <span style="font-size:11px;color:#1976d2;">${shifts[s]?.half ? '0.5' : '1'}</span>
                         </td>`;

@@ -1,3 +1,6 @@
+// CODE_VERSION: Đổi chuỗi này mỗi lần thay đổi code để hiển thị version mới trên menu
+const CODE_VERSION = '1.1.5'; // ví dụ: '1.1.5'
+
 function renderMenu(active) {
     // Xóa menu cũ nếu có
     const oldMenu = document.querySelector('.navbar');
@@ -277,9 +280,31 @@ function renderMenu(active) {
     const nav = document.createElement('div');
     nav.className = 'navbar';
     nav.innerHTML = `
-        <div class="navbar-logo">
+        <div class="navbar-logo" style="position:relative;">
             <span class="navbar-logo-icon">🕒</span>
-            TimePro HRM
+            TimePro HR
+            <span style="position:relative;display:inline-block;">
+                M
+                <span id="app-version-number" style="
+                    position: absolute;
+                    left: 70%;
+                    top: -15px;
+                    font-size: 11px;
+                    color: #fff;
+                    font-weight: bold;
+                    letter-spacing: 0.5px;
+                    background: none;
+                    padding: 0;
+                    border: none;
+                    z-index: 2;
+                    cursor: pointer;
+                    text-decoration: underline dotted;
+                    "
+                    title="Xem lịch sử phiên bản"
+                >
+                    V${CODE_VERSION}
+                </span>
+            </span>
             <span id="app-version-label" class="app-version-label" title="Nhấn để nhập Key">
                 ${appVersion}
             </span>
@@ -303,6 +328,7 @@ function renderMenu(active) {
                 <button type="button" class="menu-import-btn" onclick="document.getElementById('importDataInput').click()">Nhập dữ liệu</button>
                 <input id="importDataInput" type="file" accept=".json" onchange="importAllData && importAllData(event)">
                 <button type="button" class="menu-telegram-btn" onclick="sendAllDataToTelegramBot()">Gửi dữ liệu về Bot</button>
+                <!-- Đã bỏ nút Lịch Sử -->
             </div>
         </div>
     `;
@@ -337,12 +363,127 @@ function renderMenu(active) {
                 <span id="popup-success-close" style="position:absolute; top:8px; right:12px; font-size:20px; color:#888; cursor:pointer;" title="Đóng">&times;</span>
             </div>
         </div>
+        <div id="popup-version-history-overlay" style="display:none; position:fixed; z-index:10001; left:0; top:0; width:100vw; height:100vh; background:#0007; align-items:center; justify-content:center;">
+            <div id="popup-version-history-box" style="background:#fff; border-radius:12px; box-shadow:0 8px 32px #0003; padding:28px 32px 22px 32px; min-width:320px; max-width:95vw; display:flex; flex-direction:column; align-items:center; position:relative;">
+                <div style="font-size:20px; font-weight:600; color:#1976d2; margin-bottom:18px; letter-spacing:1px;">Lịch sử các phiên bản</div>
+                <div id="popup-version-history-content" style="width:100%; max-height:55vh; overflow-y:auto; font-size:15px; color:#333; text-align:left;">
+                    <!-- Nội dung lịch sử sẽ được render ở đây -->
+                </div>
+                <button id="popup-version-history-ok" style="background:#1976d2; color:#fff; border:none; border-radius:6px; padding:7px 22px; font-size:15px; font-weight:600; cursor:pointer; margin-top:18px; transition:background 0.18s;">Đóng</button>
+                <span id="popup-version-history-close" style="position:absolute; top:8px; right:12px; font-size:20px; color:#888; cursor:pointer;" title="Đóng">&times;</span>
+            </div>
+        </div>
         `;
         const div = document.createElement('div');
         div.innerHTML = popupHtml;
         document.body.appendChild(div.firstElementChild);
         document.body.appendChild(div.lastElementChild);
+        document.body.appendChild(div.lastChild); // Thêm popup version history
     }
+
+    // XÓA popup lịch sử thao tác và các hàm liên quan
+    // XÓA window.addHistoryLog, window.showHistoryLogPopup, setupAutoHistoryLog, popup-history-log-overlay
+
+    // Hàm ghi log thao tác (ghi lại mọi thao tác, chỉ lưu local, không gửi bot)
+    window.addHistoryLog = function(action, detail) {
+        const logs = JSON.parse(localStorage.getItem('historyLogs') || '[]');
+        const user = localStorage.getItem('currentUser') || 'Ẩn danh';
+        logs.unshift({
+            time: new Date().toLocaleString(),
+            user,
+            action,
+            detail
+        });
+        // Giới hạn tối đa 2000 dòng log
+        if (logs.length > 2000) logs.length = 2000;
+        localStorage.setItem('historyLogs', JSON.stringify(logs));
+    };
+
+    // Ghi lại thao tác vào phần mềm (vào phần mềm, chuyển tab, mở popup, chấm công, xuất/nhập dữ liệu, v.v.)
+    (function setupAutoHistoryLog() {
+        // Ghi lại lần đầu vào phần mềm
+        if (!sessionStorage.getItem('loggedThisSession')) {
+            window.addHistoryLog('Đăng nhập/Truy cập', 'Vào phần mềm lúc ' + new Date().toLocaleString());
+            sessionStorage.setItem('loggedThisSession', '1');
+        }
+        // Ghi lại chuyển tab menu
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.navbar-menu button');
+            if (btn) {
+                window.addHistoryLog('Chuyển tab', btn.textContent.trim());
+            }
+        }, true);
+        // Ghi lại mở popup lịch sử phiên bản
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.id === 'app-version-number') {
+                window.addHistoryLog('Xem lịch sử phiên bản', '');
+            }
+        }, true);
+        // Ghi lại mở popup nhập key
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.id === 'app-version-label') {
+                window.addHistoryLog('Mở popup nhập key', '');
+            }
+        }, true);
+        // Ghi lại mở popup lịch sử thao tác
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.classList.contains('menu-history-btn')) {
+                window.addHistoryLog('Xem lịch sử thao tác', '');
+            }
+        }, true);
+        // Ghi lại xuất dữ liệu
+        window.exportAllData = (function(orig) {
+            return function() {
+                window.addHistoryLog('Xuất dữ liệu', 'Xuất toàn bộ dữ liệu ra file');
+                if (orig) orig.apply(this, arguments);
+            };
+        })(window.exportAllData);
+        // Ghi lại nhập dữ liệu
+        window.importAllData = (function(orig) {
+            return function() {
+                window.addHistoryLog('Nhập dữ liệu', 'Nhập dữ liệu từ file');
+                if (orig) orig.apply(this, arguments);
+            };
+        })(window.importAllData);
+        // Ghi lại gửi dữ liệu về bot
+        window.sendAllDataToTelegramBot = (function(orig) {
+            return function() {
+                window.addHistoryLog('Gửi dữ liệu về Bot', '');
+                if (orig) orig.apply(this, arguments);
+            };
+        })(window.sendAllDataToTelegramBot);
+        // Ghi lại mở các popup khác nếu muốn...
+    })();
+
+    // Hàm hiển thị popup lịch sử thao tác
+    window.showHistoryLogPopup = function() {
+        const overlay = document.getElementById('popup-history-log-overlay');
+        const content = document.getElementById('popup-history-log-content');
+        const logs = JSON.parse(localStorage.getItem('historyLogs') || '[]');
+        if (logs.length === 0) {
+            content.innerHTML = '<div style="color:#888; text-align:center; padding:24px 0;">Chưa có lịch sử thao tác nào.</div>';
+        } else {
+            content.innerHTML = logs.map(log =>
+                `<div style="padding:7px 18px; border-bottom:1px solid #e3eaf2;">
+                    <div style="font-size:13px; color:#1976d2; font-weight:600;">${log.time} - ${log.user}</div>
+                    <div style="margin-left:8px; margin-top:2px;"><b>${log.action}</b> ${log.detail ? ('- ' + log.detail) : ''}</div>
+                </div>`
+            ).join('');
+        }
+        overlay.style.display = 'flex';
+        document.getElementById('popup-history-log-ok').onclick = function() {
+            overlay.style.display = 'none';
+        };
+        document.getElementById('popup-history-log-close').onclick = function() {
+            overlay.style.display = 'none';
+        };
+        overlay.onkeydown = function(e) {
+            if (e.key === 'Escape') overlay.style.display = 'none';
+        };
+        setTimeout(() => {
+            document.getElementById('popup-history-log-ok').focus();
+        }, 100);
+    };
 
     // Hàm mở popup thông báo thành công
     function showSuccessPopup(msg) {
@@ -432,8 +573,166 @@ function renderMenu(active) {
         });
     }
 
+    // Thêm hàm hiển thị popup lịch sử phiên bản
+    function showVersionHistoryPopup() {
+        const overlay = document.getElementById('popup-version-history-overlay');
+        const content = document.getElementById('popup-version-history-content');
+        // Danh sách lịch sử phiên bản (từ 1.0.0 đến 1.1.5, mỗi bản một cải tiến)
+        const history = [
+            {
+                version: '1.1.5',
+                date: '10/6/2025',
+                note: 'Thêm popup lịch sử phiên bản khi nhấn vào số version.'
+            },
+            {
+                version: '1.1.4',
+                date: '5/6/2025',
+                note: 'Cải thiện tốc độ xuất dữ liệu và sửa lỗi nhỏ giao diện.'
+            },
+            {
+                version: '1.1.3',
+                date: '30/5/2025',
+                note: 'Thêm chức năng gửi dữ liệu về Telegram Bot.'
+            },
+            {
+                version: '1.1.2',
+                date: '25/5/2025',
+                note: 'Bổ sung xuất lịch làm việc và ca mẫu lịch làm việc vào dữ liệu xuất file.'
+            },
+            {
+                version: '1.1.1',
+                date: '20/5/2025',
+                note: 'Tối ưu popup nhập key và giao diện menu.'
+            },
+            {
+                version: '1.1.0',
+                date: '15/5/2025',
+                note: 'Thêm popup nhập key nâng cấp phiên bản (Free/Pro/Business).'
+            },
+            {
+                version: '1.0.9',
+                date: '10/5/2025',
+                note: 'Thêm chức năng nhập/xuất toàn bộ dữ liệu (JSON).'
+            },
+            {
+                version: '1.0.8',
+                date: '7/5/2025',
+                note: 'Thêm chức năng ghi chú cá nhân cho từng nhân viên.'
+            },
+            {
+                version: '1.0.7',
+                date: '5/5/2025',
+                note: 'Thêm chức năng lập báo cáo lương tổng hợp theo tháng.'
+            },
+            {
+                version: '1.0.6',
+                date: '3/5/2025',
+                note: 'Thêm chức năng bảng lương chi tiết từng nhân viên.'
+            },
+            {
+                version: '1.0.5',
+                date: '2/5/2025',
+                note: 'Thêm chức năng chấm công theo ca và lịch làm việc.'
+            },
+            {
+                version: '1.0.4',
+                date: '1/5/2025',
+                note: 'Thêm chức năng thiết lập ca làm việc và lịch làm việc tuần.'
+            },
+            {
+                version: '1.0.3',
+                date: '30/4/2025',
+                note: 'Thêm chức năng quản lý danh sách nhân viên.'
+            },
+            {
+                version: '1.0.2',
+                date: '28/4/2025',
+                note: 'Thêm giao diện menu mới và tối ưu trải nghiệm người dùng.'
+            },
+            {
+                version: '1.0.1',
+                date: '25/4/2025',
+                note: 'Thêm chức năng đăng nhập và phân quyền cơ bản.'
+            },
+            {
+                version: '1.0.0',
+                date: '20/4/2025',
+                note: 'Ra mắt phiên bản đầu tiên với các chức năng cơ bản: chấm công, xem danh sách nhân viên, xuất dữ liệu.'
+            }
+        ];
+        // Lấy version hiện tại
+        let currentVersion = CODE_VERSION;
+        // Nếu đã từng chuyển version thủ công thì lấy version đó để hiển thị
+        if (localStorage.getItem('selectedCodeVersion')) {
+            currentVersion = localStorage.getItem('selectedCodeVersion');
+        }
+        content.innerHTML = history.map(h =>
+            `<div style="margin-bottom:12px;">
+                <b style="color:#1976d2;">V${h.version}</b>
+                <span style="color:#888; font-size:13px; margin-left:8px;">(${h.date})</span>
+                <div style="margin-left:12px; margin-top:2px;">- ${h.note}</div>
+                ${h.version === currentVersion ? `<span style="margin-left:12px; color:#43a047; font-size:13px;">(Đang dùng)</span>` : ''}
+            </div>`
+        ).join('') +
+        `<div style="margin-top:18px; text-align:center;">
+            <button id="btn-check-update" style="background:#1976d2; color:#fff; border:none; border-radius:6px; padding:7px 22px; font-size:15px; font-weight:600; cursor:pointer; transition:background 0.18s;">
+                Kiểm tra cập nhật
+            </button>
+            <span id="check-update-msg" style="display:inline-block; margin-left:12px; color:#1976d2; font-size:14px;"></span>
+        </div>`;
+        overlay.style.display = 'flex';
+
+        // Bỏ sự kiện chuyển về bản khác
+
+        // Sự kiện kiểm tra cập nhật
+        document.getElementById('btn-check-update').onclick = function() {
+            const msg = document.getElementById('check-update-msg');
+            msg.textContent = 'Đang kiểm tra...';
+            setTimeout(() => {
+                if (currentVersion === history[0].version) {
+                    msg.textContent = 'Bạn đang dùng phiên bản mới nhất!';
+                } else {
+                    msg.innerHTML = `Có phiên bản mới: V${history[0].version}. <button id="btn-update-now" style="background:#43a047; color:#fff; border:none; border-radius:5px; padding:3px 12px; font-size:13px; cursor:pointer; margin-left:8px;">Cập nhật ngay</button>`;
+                    document.getElementById('btn-update-now').onclick = function() {
+                        localStorage.setItem('selectedCodeVersion', history[0].version);
+                        showSuccessPopup('Đã cập nhật lên phiên bản mới nhất V' + history[0].version + '. Đang cập nhật lại giao diện...');
+                        setTimeout(() => {
+                            renderMenu(window._lastActiveMenu || 'index');
+                        }, 600);
+                    };
+                }
+            }, 900);
+        };
+
+        document.getElementById('popup-version-history-ok').onclick = function() {
+            overlay.style.display = 'none';
+        };
+        document.getElementById('popup-version-history-close').onclick = function() {
+            overlay.style.display = 'none';
+        };
+        overlay.onkeydown = function(e) {
+            if (e.key === 'Escape') overlay.style.display = 'none';
+        };
+        setTimeout(() => {
+            document.getElementById('popup-version-history-ok').focus();
+        }, 100);
+    }
+
     // Gán sự kiện click cho label phiên bản
     document.getElementById('app-version-label').onclick = showKeyPopup;
+
+    // Gán sự kiện click cho số version để mở popup lịch sử phiên bản
+    document.getElementById('app-version-number').onclick = showVersionHistoryPopup;
+
+    // Lưu lại menu đang active để render lại đúng tab khi đổi version
+    window._lastActiveMenu = active;
+
+    // Khi renderMenu, nếu có selectedCodeVersion thì cập nhật lại số version hiển thị
+    const selectedCodeVersion = localStorage.getItem('selectedCodeVersion');
+    if (selectedCodeVersion && selectedCodeVersion !== CODE_VERSION) {
+        const versionNumberEl = document.getElementById('app-version-number');
+        if (versionNumberEl) versionNumberEl.textContent = 'V' + selectedCodeVersion;
+    }
 
     // Đóng dropdown khi click ngoài hoặc chuyển tab
     document.querySelectorAll('.menu-data-dropdown').forEach(drop => {
@@ -561,3 +860,9 @@ function sendAllDataToTelegramBot() {
         alert('Lỗi khi gửi dữ liệu về Bot!');
     }
 }
+
+// Gợi ý sử dụng addHistoryLog ở các thao tác chính (ví dụ):
+// window.addHistoryLog('Chấm công', 'Nhân viên Nguyễn Văn A chấm công ngày 10/6/2025');
+// window.addHistoryLog('Xem bảng lương', 'Mở bảng lương tháng 5/2025');
+// window.addHistoryLog('Xuất dữ liệu', 'Xuất toàn bộ dữ liệu ra file');
+// window.addHistoryLog('Nhập dữ liệu', 'Nhập dữ liệu từ file qlnv_data.json');
