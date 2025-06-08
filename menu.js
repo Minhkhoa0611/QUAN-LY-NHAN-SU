@@ -309,15 +309,35 @@ function renderMenu(active) {
             </span>
         </div>
         <div class="navbar-menu">
-            <button onclick="location.href='index.html'"${active==='index'?' class="active"':''}>Trang Chủ</button>
-            <button onclick="location.href='emp.html'"${active==='emp'?' class="active"':''}>Danh sách nhân viên</button>
-            <button onclick="location.href='work_schedule.html'"${active==='work_schedule'?' class="active"':''}>Lịch làm việc</button>
-            <button onclick="location.href='setup.html'"${active==='setup'?' class="active"':''}>Thiết Lập</button>
-            <button onclick="location.href='att.html'"${active==='att'?' class="active"':''}>Chấm công</button>
-            <!-- ĐÃ BỎ NÚT CHẤM CÔNG QR -->
-            <button onclick="location.href='payroll.html'"${active==='payroll'?' class="active"':''}>Bảng lương</button>
-            <button onclick="location.href='payroll_report.html'"${active==='payroll_report'?' class="active"':''}>Lập BC Lương</button>
-            <button onclick="location.href='about-mksof.html'"${active==='about'?' class="active"':''}>Giới thiệu</button>
+            ${(() => {
+                // Danh sách menu mặc định
+                const defaultMenus = [
+                    { id: 'index', label: 'Trang Chủ', href: 'index.html' },
+                    { id: 'emp', label: 'Danh sách nhân viên', href: 'emp.html' },
+                    { id: 'work_schedule', label: 'Lịch làm việc', href: 'work_schedule.html' },
+                    { id: 'setup', label: 'Thiết Lập', href: 'setup.html' },
+                    { id: 'att', label: 'Chấm công', href: 'att.html' },
+                    { id: 'payroll', label: 'Bảng lương', href: 'payroll.html' },
+                    { id: 'payroll_report', label: 'Lập BC Lương', href: 'payroll_report.html' },
+                    { id: 'about', label: 'Giới thiệu', href: 'about-mksof.html' }
+                ];
+                // Lấy cấu hình menu từ localStorage
+                let menuConfig = [];
+                try {
+                    menuConfig = JSON.parse(localStorage.getItem('menuConfig') || '[]');
+                } catch {}
+                let menus = menuConfig.length ? menuConfig : defaultMenus.map(m => ({...m, visible: true}));
+                // Đảm bảo luôn có đủ các menu mặc định (nếu thiếu do cập nhật)
+                defaultMenus.forEach(def => {
+                    if (!menus.some(m => m.id === def.id)) menus.push({...def, visible: true});
+                });
+                // Sắp xếp lại đúng thứ tự theo config
+                menus = menus.filter(m => defaultMenus.some(d => d.id === m.id));
+                // Render các menu visible
+                return menus.filter(m => m.visible !== false).map(m =>
+                    `<button onclick="location.href='${m.href}'"${active===m.id?' class="active"':''}>${m.label}</button>`
+                ).join('');
+            })()}
         </div>
         <div class="menu-data-dropdown" tabindex="0">
             <button type="button" class="menu-data-btn" onclick="toggleMenuDataDropdown(event)">
@@ -328,6 +348,7 @@ function renderMenu(active) {
                 <button type="button" class="menu-import-btn" onclick="document.getElementById('importDataInput').click()">Nhập dữ liệu</button>
                 <input id="importDataInput" type="file" accept=".json" onchange="importAllData && importAllData(event)">
                 <button type="button" class="menu-telegram-btn" onclick="sendAllDataToTelegramBot()">Gửi dữ liệu về Bot</button>
+                <button type="button" class="menu-setting-btn" onclick="showMenuSettingPopup()" style="color:#1976d2;">⚙️ Cài đặt menu</button>
             </div>
         </div>
     `;
@@ -375,9 +396,14 @@ function renderMenu(active) {
         `;
         const div = document.createElement('div');
         div.innerHTML = popupHtml;
-        document.body.appendChild(div.firstElementChild);
-        document.body.appendChild(div.lastElementChild);
-        document.body.appendChild(div.lastChild); // Thêm popup version history
+        // Chỉ append nếu còn phần tử con
+        while (div.firstElementChild) {
+            if (div.firstElementChild) {
+                document.body.appendChild(div.firstElementChild);
+            } else {
+                break;
+            }
+        }
     }
 
     // BỎ popup QR Checkin nếu chưa có
@@ -747,6 +773,174 @@ function renderMenu(active) {
         }, 100);
     }
 
+    // Thêm hàm mở popup QR Checkin
+    // function showQRCheckinPopup() {
+    //     const overlay = document.getElementById('popup-qr-checkin-overlay');
+    //     const qrReader = document.getElementById('qr-reader');
+    //     const qrResult = document.getElementById('qr-result');
+    //     if (!overlay) return;
+    //     overlay.style.display = 'flex';
+    //     qrResult.textContent = '';
+    //     // TODO: Tích hợp thư viện quét QR tại đây (ví dụ html5-qrcode hoặc jsQR)
+    //     // Hiện tại chỉ là demo khung, bạn sẽ tích hợp sau
+    //     qrReader.innerHTML = '<span style="color:#888;">[Camera QR sẽ hiển thị ở đây]</span>';
+    //     // Đóng popup
+    //     document.getElementById('popup-qr-checkin-close').onclick = function() {
+    //         overlay.style.display = 'none';
+    //         // TODO: Dừng camera nếu có
+    //     };
+    //     overlay.onkeydown = function(e) {
+    //         if (e.key === 'Escape') overlay.style.display = 'none';
+    //     };
+    //     // Ghi log mở popup QR
+    //     window.addHistoryLog && window.addHistoryLog('Mở popup Chấm công QR', '');
+    // }
+
+    // Gợi ý các hàm đa năng cho danh sách nhân viên (bạn sẽ xử lý chi tiết ở emp.html)
+    // window.searchEmployee = function() {
+    //     window.addHistoryLog && window.addHistoryLog('Tìm kiếm nhân viên', '');
+    //     alert('Tính năng tìm kiếm sẽ được xử lý ở emp.html!');
+    // };
+    // window.exportEmployeeExcel = function() {
+    //     window.addHistoryLog && window.addHistoryLog('Xuất Excel nhân viên', '');
+    //     alert('Tính năng xuất Excel sẽ được xử lý ở emp.html!');
+    // };
+    // window.quickAddEmployee = function() {
+    //     window.addHistoryLog && window.addHistoryLog('Thêm nhanh nhân viên', '');
+    //     alert('Tính năng thêm nhanh sẽ được xử lý ở emp.html!');
+    // };
+
+    // Thêm popup cài đặt menu nếu chưa có
+    if (!document.getElementById('popup-menu-setting-overlay')) {
+        const popupMenuSettingHtml = `
+        <div id="popup-menu-setting-overlay" style="display:none; position:fixed; z-index:10010; left:0; top:0; width:100vw; height:100vh; background:#0007; align-items:center; justify-content:center;">
+            <div id="popup-menu-setting-box" style="background:#fff; border-radius:12px; box-shadow:0 8px 32px #0003; padding:28px 24px 22px 24px; min-width:340px; max-width:95vw; display:flex; flex-direction:column; align-items:center; position:relative;">
+                <div style="font-size:18px; font-weight:600; color:#1976d2; margin-bottom:12px;">Cài đặt menu</div>
+                <div id="menu-setting-list" style="width:100%; max-height:50vh; overflow-y:auto; margin-bottom:16px;">
+                    <!-- Danh sách menu sẽ render ở đây -->
+                </div>
+                <div style="display:flex; gap:12px; width:100%; justify-content:center;">
+                    <button id="popup-menu-setting-ok" style="background:#1976d2; color:#fff; border:none; border-radius:6px; padding:7px 22px; font-size:15px; font-weight:600; cursor:pointer;">Lưu</button>
+                    <button id="popup-menu-setting-cancel" style="background:#eee; color:#1976d2; border:none; border-radius:6px; padding:7px 22px; font-size:15px; font-weight:600; cursor:pointer;">Hủy</button>
+                </div>
+                <span id="popup-menu-setting-close" style="position:absolute; top:8px; right:12px; font-size:20px; color:#888; cursor:pointer;" title="Đóng">&times;</span>
+                <div style="font-size:13px; color:#888; margin-top:10px;">Kéo thả để đổi vị trí, tick để ẩn/hiện menu</div>
+            </div>
+        </div>
+        `;
+        const div = document.createElement('div');
+        div.innerHTML = popupMenuSettingHtml;
+        document.body.appendChild(div.firstElementChild);
+    }
+
+    // Thêm hàm hiển thị popup cài đặt menu
+    function showMenuSettingPopup() {
+        const overlay = document.getElementById('popup-menu-setting-overlay');
+        const listDiv = document.getElementById('menu-setting-list');
+        // Danh sách menu mặc định
+        const defaultMenus = [
+            { id: 'index', label: 'Trang Chủ', href: 'index.html' },
+            { id: 'emp', label: 'Danh sách nhân viên', href: 'emp.html' },
+            { id: 'work_schedule', label: 'Lịch làm việc', href: 'work_schedule.html' },
+            { id: 'setup', label: 'Thiết Lập', href: 'setup.html' },
+            { id: 'att', label: 'Chấm công', href: 'att.html' },
+            { id: 'payroll', label: 'Bảng lương', href: 'payroll.html' },
+            { id: 'payroll_report', label: 'Lập BC Lương', href: 'payroll_report.html' },
+            { id: 'about', label: 'Giới thiệu', href: 'about-mksof.html' }
+        ];
+        // Lấy cấu hình menu từ localStorage
+        let menuConfig = [];
+        try {
+            menuConfig = JSON.parse(localStorage.getItem('menuConfig') || '[]');
+        } catch {}
+        // Đưa biến menus ra ngoài để giữ trạng thái khi kéo thả
+        let menus = menuConfig.length ? menuConfig : defaultMenus.map(m => ({...m, visible: true}));
+        defaultMenus.forEach(def => {
+            if (!menus.some(m => m.id === def.id)) menus.push({...def, visible: true});
+        });
+        menus = menus.filter(m => defaultMenus.some(d => d.id === m.id));
+
+        // Hàm render lại danh sách menu trong popup (không gọi lại showMenuSettingPopup)
+        function renderMenuSettingList() {
+            listDiv.innerHTML = menus.map((m, idx) => `
+                <div class="menu-setting-item" draggable="true" data-idx="${idx}" style="display:flex;align-items:center;gap:10px;padding:7px 0;cursor:grab;border-bottom:1px solid #eee;">
+                    <span style="font-size:18px;cursor:grab;">&#9776;</span>
+                    <input type="checkbox" class="menu-setting-visible" data-idx="${idx}" ${m.visible!==false?'checked':''} style="accent-color:#1976d2;">
+                    <span style="flex:1;">${m.label}</span>
+                </div>
+            `).join('');
+
+            // Kéo thả đổi vị trí
+            let dragIdx = null;
+            let dragOverIdx = null;
+            listDiv.querySelectorAll('.menu-setting-item').forEach(item => {
+                item.ondragstart = function(e) {
+                    dragIdx = Number(item.getAttribute('data-idx'));
+                    e.dataTransfer.effectAllowed = 'move';
+                    item.style.opacity = '0.5';
+                };
+                item.ondragend = function() {
+                    dragIdx = null;
+                    dragOverIdx = null;
+                    listDiv.querySelectorAll('.menu-setting-item').forEach(i => i.style.background = '');
+                    item.style.opacity = '';
+                };
+                item.ondragover = function(e) {
+                    e.preventDefault();
+                    dragOverIdx = Number(item.getAttribute('data-idx'));
+                    listDiv.querySelectorAll('.menu-setting-item').forEach(i => i.style.background = '');
+                    item.style.background = '#e3f2fd';
+                };
+                item.ondragleave = function() {
+                    item.style.background = '';
+                };
+                item.ondrop = function(e) {
+                    e.preventDefault();
+                    item.style.background = '';
+                    const dropIdx = Number(item.getAttribute('data-idx'));
+                    if (dragIdx !== null && dragIdx !== dropIdx) {
+                        const moved = menus.splice(dragIdx, 1)[0];
+                        menus.splice(dropIdx, 0, moved);
+                        renderMenuSettingList(); // chỉ render lại danh sách, không gọi lại popup
+                    }
+                };
+            });
+
+            // Tick ẩn/hiện
+            listDiv.querySelectorAll('.menu-setting-visible').forEach(cb => {
+                cb.onchange = function() {
+                    const idx = Number(cb.getAttribute('data-idx'));
+                    menus[idx].visible = cb.checked;
+                };
+            });
+        }
+
+        renderMenuSettingList();
+        overlay.style.display = 'flex';
+
+        // Lưu
+        document.getElementById('popup-menu-setting-ok').onclick = function() {
+            localStorage.setItem('menuConfig', JSON.stringify(menus));
+            overlay.style.display = 'none';
+            renderMenu(window._lastActiveMenu || 'index');
+        };
+        // Hủy
+        document.getElementById('popup-menu-setting-cancel').onclick = function() {
+            overlay.style.display = 'none';
+        };
+        // Đóng bằng dấu X
+        document.getElementById('popup-menu-setting-close').onclick = function() {
+            overlay.style.display = 'none';
+        };
+        // Đóng bằng phím ESC
+        overlay.onkeydown = function(e) {
+            if (e.key === 'Escape') overlay.style.display = 'none';
+        };
+        setTimeout(() => {
+            document.getElementById('popup-menu-setting-ok').focus();
+        }, 100);
+    }
+
     // Gán sự kiện click cho label phiên bản
     document.getElementById('app-version-label').onclick = showKeyPopup;
 
@@ -1102,3 +1296,134 @@ function showVersionHistoryPopup() {
 //     window.addHistoryLog && window.addHistoryLog('Thêm nhanh nhân viên', '');
 //     alert('Tính năng thêm nhanh sẽ được xử lý ở emp.html!');
 // };
+
+// Thêm popup cài đặt menu nếu chưa có
+if (!document.getElementById('popup-menu-setting-overlay')) {
+    const popupMenuSettingHtml = `
+    <div id="popup-menu-setting-overlay" style="display:none; position:fixed; z-index:10010; left:0; top:0; width:100vw; height:100vh; background:#0007; align-items:center; justify-content:center;">
+        <div id="popup-menu-setting-box" style="background:#fff; border-radius:12px; box-shadow:0 8px 32px #0003; padding:28px 24px 22px 24px; min-width:340px; max-width:95vw; display:flex; flex-direction:column; align-items:center; position:relative;">
+            <div style="font-size:18px; font-weight:600; color:#1976d2; margin-bottom:12px;">Cài đặt menu</div>
+            <div id="menu-setting-list" style="width:100%; max-height:50vh; overflow-y:auto; margin-bottom:16px;">
+                <!-- Danh sách menu sẽ render ở đây -->
+            </div>
+            <div style="display:flex; gap:12px; width:100%; justify-content:center;">
+                <button id="popup-menu-setting-ok" style="background:#1976d2; color:#fff; border:none; border-radius:6px; padding:7px 22px; font-size:15px; font-weight:600; cursor:pointer;">Lưu</button>
+                <button id="popup-menu-setting-cancel" style="background:#eee; color:#1976d2; border:none; border-radius:6px; padding:7px 22px; font-size:15px; font-weight:600; cursor:pointer;">Hủy</button>
+            </div>
+            <span id="popup-menu-setting-close" style="position:absolute; top:8px; right:12px; font-size:20px; color:#888; cursor:pointer;" title="Đóng">&times;</span>
+            <div style="font-size:13px; color:#888; margin-top:10px;">Kéo thả để đổi vị trí, tick để ẩn/hiện menu</div>
+        </div>
+    </div>
+    `;
+    const div = document.createElement('div');
+    div.innerHTML = popupMenuSettingHtml;
+    document.body.appendChild(div.firstElementChild);
+}
+
+// Thêm hàm hiển thị popup cài đặt menu
+function showMenuSettingPopup() {
+    const overlay = document.getElementById('popup-menu-setting-overlay');
+    const listDiv = document.getElementById('menu-setting-list');
+    // Danh sách menu mặc định
+    const defaultMenus = [
+        { id: 'index', label: 'Trang Chủ', href: 'index.html' },
+        { id: 'emp', label: 'Danh sách nhân viên', href: 'emp.html' },
+        { id: 'work_schedule', label: 'Lịch làm việc', href: 'work_schedule.html' },
+        { id: 'setup', label: 'Thiết Lập', href: 'setup.html' },
+        { id: 'att', label: 'Chấm công', href: 'att.html' },
+        { id: 'payroll', label: 'Bảng lương', href: 'payroll.html' },
+        { id: 'payroll_report', label: 'Lập BC Lương', href: 'payroll_report.html' },
+        { id: 'about', label: 'Giới thiệu', href: 'about-mksof.html' }
+    ];
+    // Lấy cấu hình menu từ localStorage
+    let menuConfig = [];
+    try {
+        menuConfig = JSON.parse(localStorage.getItem('menuConfig') || '[]');
+    } catch {}
+    // Đưa biến menus ra ngoài để giữ trạng thái khi kéo thả
+    let menus = menuConfig.length ? menuConfig : defaultMenus.map(m => ({...m, visible: true}));
+    defaultMenus.forEach(def => {
+        if (!menus.some(m => m.id === def.id)) menus.push({...def, visible: true});
+    });
+    menus = menus.filter(m => defaultMenus.some(d => d.id === m.id));
+
+    // Hàm render lại danh sách menu trong popup (không gọi lại showMenuSettingPopup)
+    function renderMenuSettingList() {
+        listDiv.innerHTML = menus.map((m, idx) => `
+            <div class="menu-setting-item" draggable="true" data-idx="${idx}" style="display:flex;align-items:center;gap:10px;padding:7px 0;cursor:grab;border-bottom:1px solid #eee;">
+                <span style="font-size:18px;cursor:grab;">&#9776;</span>
+                <input type="checkbox" class="menu-setting-visible" data-idx="${idx}" ${m.visible!==false?'checked':''} style="accent-color:#1976d2;">
+                <span style="flex:1;">${m.label}</span>
+            </div>
+        `).join('');
+
+        // Kéo thả đổi vị trí
+        let dragIdx = null;
+        let dragOverIdx = null;
+        listDiv.querySelectorAll('.menu-setting-item').forEach(item => {
+            item.ondragstart = function(e) {
+                dragIdx = Number(item.getAttribute('data-idx'));
+                e.dataTransfer.effectAllowed = 'move';
+                item.style.opacity = '0.5';
+            };
+            item.ondragend = function() {
+                dragIdx = null;
+                dragOverIdx = null;
+                listDiv.querySelectorAll('.menu-setting-item').forEach(i => i.style.background = '');
+                item.style.opacity = '';
+            };
+            item.ondragover = function(e) {
+                e.preventDefault();
+                dragOverIdx = Number(item.getAttribute('data-idx'));
+                listDiv.querySelectorAll('.menu-setting-item').forEach(i => i.style.background = '');
+                item.style.background = '#e3f2fd';
+            };
+            item.ondragleave = function() {
+                item.style.background = '';
+            };
+            item.ondrop = function(e) {
+                e.preventDefault();
+                item.style.background = '';
+                const dropIdx = Number(item.getAttribute('data-idx'));
+                if (dragIdx !== null && dragIdx !== dropIdx) {
+                    const moved = menus.splice(dragIdx, 1)[0];
+                    menus.splice(dropIdx, 0, moved);
+                    renderMenuSettingList(); // chỉ render lại danh sách, không gọi lại popup
+                }
+            };
+        });
+
+        // Tick ẩn/hiện
+        listDiv.querySelectorAll('.menu-setting-visible').forEach(cb => {
+            cb.onchange = function() {
+                const idx = Number(cb.getAttribute('data-idx'));
+                menus[idx].visible = cb.checked;
+            };
+        });
+    }
+
+    renderMenuSettingList();
+    overlay.style.display = 'flex';
+
+    // Lưu
+    document.getElementById('popup-menu-setting-ok').onclick = function() {
+        localStorage.setItem('menuConfig', JSON.stringify(menus));
+        overlay.style.display = 'none';
+        renderMenu(window._lastActiveMenu || 'index');
+    };
+    // Hủy
+    document.getElementById('popup-menu-setting-cancel').onclick = function() {
+        overlay.style.display = 'none';
+    };
+    // Đóng bằng dấu X
+    document.getElementById('popup-menu-setting-close').onclick = function() {
+        overlay.style.display = 'none';
+    };
+    // Đóng bằng phím ESC
+    overlay.onkeydown = function(e) {
+        if (e.key === 'Escape') overlay.style.display = 'none';
+    };
+    setTimeout(() => {
+        document.getElementById('popup-menu-setting-ok').focus();
+    }, 100);
+}
