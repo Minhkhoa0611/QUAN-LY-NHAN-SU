@@ -30,7 +30,7 @@ function renderMenu(active) {
     // Định nghĩa màu cho từng phiên bản
     const versionColors = {
         Free:   { menu: '#1976d2', label: '#1976d2' },
-        Pro:    { menu: '#8e24aa', label: '#8e24aa' },
+        Pro:    { menu: '#ec4899', label: '#ec4899' }, // hồng cánh sen
         Business: { menu: '#2e7d32', label: '#2e7d32' }
     };
 
@@ -1235,7 +1235,7 @@ function showVersionHistoryPopup() {
                 msg.textContent = 'Bạn đang dùng phiên bản mới nhất!';
             } else {
                 msg.innerHTML = `Có phiên bản mới: V${history[0].version}. <button id="btn-update-now" style="background:#43a047; color:#fff; border:none; border-radius:5px; padding:3px 12px; font-size:13px; cursor:pointer; margin-left:8px;">Cập nhật ngay</button>`;
-                document.getElementById('btn-update-now').onclick = function() {
+                document.getElementById('btn-update_now').onclick = function() {
                     localStorage.setItem('selectedCodeVersion', history[0].version);
                     showSuccessPopup('Đã cập nhật lên phiên bản mới nhất V' + history[0].version + '. Đang cập nhật lại giao diện...');
                     setTimeout(() => {

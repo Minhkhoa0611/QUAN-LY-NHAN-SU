@@ -306,7 +306,12 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
-    <script>renderMenu('att');</script>
+    <div id="menu"></div>
+    <script src="menu.js"></script>
+    <script>
+        if (typeof renderMenu === 'function') renderMenu();
+    </script>
+    <script src="data_io.js"></script>
     <div class="container">
         <div style="background:#fff3cd;color:#b8860b;padding:18px 28px;border-radius:14px;margin-bottom:28px;font-size:1.18rem;font-weight:600;box-shadow:0 2px 12px #ffc10750;border:2px solid #ffc107;display:flex;align-items:center;justify-content:space-between;gap:28px;">
             <div style="flex:1;min-width:0;">
