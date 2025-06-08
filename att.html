@@ -277,6 +277,28 @@
             position: relative;
             min-height: 240px;
         }
+        .qr-animated-wrap {
+            position: relative;
+            display: inline-block;
+        }
+        .qr-animated-border {
+            position: absolute;
+            top: -8px; left: -8px; right: -8px; bottom: -8px;
+            border-radius: 16px;
+            pointer-events: none;
+            z-index: 2;
+            border: 3px solid #1976d2;
+            box-shadow: 0 0 18px 4px #1976d2a0, 0 0 0 0 #fff;
+            animation: qrBorderColor 3s linear infinite;
+        }
+        @keyframes qrBorderColor {
+            0%   { border-color: #1976d2; box-shadow: 0 0 18px 4px #1976d2a0; }
+            20%  { border-color: #43a047; box-shadow: 0 0 18px 4px #43a047a0; }
+            40%  { border-color: #ff9800; box-shadow: 0 0 18px 4px #ff9800a0; }
+            60%  { border-color: #e53935; box-shadow: 0 0 18px 4px #e53935a0; }
+            80%  { border-color: #8e24aa; box-shadow: 0 0 18px 4px #8e24aaa0; }
+            100% { border-color: #1976d2; box-shadow: 0 0 18px 4px #1976d2a0; }
+        }
     </style>
     <script src="menu.js"></script>
     <script src="data_io.js"></script>
@@ -286,13 +308,27 @@
 <body>
     <script>renderMenu('att');</script>
     <div class="container">
-        <div style="background:#fff3cd;color:#b8860b;padding:14px 22px;border-radius:10px;margin-bottom:22px;font-size:1.13rem;font-weight:600;box-shadow:0 2px 12px #ffc10750;border:2px solid #ffc107;">
-            <span style="font-size:1.15rem;color:#d32f2f;font-weight:bold;letter-spacing:0.5px;">&#9888; THÔNG BÁO QUAN TRỌNG:</span><br>
-            Vui lòng chọn đúng nhân viên, chấm đúng ca làm, ngày và thứ. <br>
-            <span style="color:#d32f2f;font-size:1.07rem;font-weight:600;">Mọi sai sót trong việc chấm thiếu ca, thiếu công, thiếu tiền lương sẽ do chính nhân viên chịu hoàn toàn trách nhiệm. <br>Hãy kiểm tra kỹ trước khi lưu dữ liệu chấm công!</span><br>
-            <span style="color:#1976d2;font-size:1.05rem;font-weight:500;display:block;margin-top:8px;">
-                Mọi sự cố kỹ thuật liên quan đến chấm công, bảng lương, mất dữ liệu công vui lòng liên hệ Zalo: <b>0867544809</b>
-            </span>
+        <div style="background:#fff3cd;color:#b8860b;padding:18px 28px;border-radius:14px;margin-bottom:28px;font-size:1.18rem;font-weight:600;box-shadow:0 2px 12px #ffc10750;border:2px solid #ffc107;display:flex;align-items:center;justify-content:space-between;gap:28px;">
+            <div style="flex:1;min-width:0;">
+                <span style="font-size:1.35rem;color:#d32f2f;font-weight:bold;letter-spacing:0.5px;font-family:'Segoe UI Semibold','Segoe UI',Arial,sans-serif;">&#9888; Lưu ý:</span>
+                <span style="color:#d32f2f;font-size:1.25rem;font-weight:700;display:block;margin:10px 0 12px 0;font-family:'Segoe UI Semibold','Segoe UI',Arial,sans-serif;">
+                    <b>Công bạn tự chấm, lương bạn tự hưởng – sai là tự chịu!</b>
+                </span>
+                <span style="color:#d32f2f;font-size:1.08rem;font-weight:600;display:block;margin-bottom:0;font-family:'Segoe UI',Arial,sans-serif;">
+                    Kiểm tra chấm công từng ngày, đừng chấm trước rồi lại sai!
+                </span>
+            </div>
+            <div style="flex-shrink:0;text-align:center;">
+                <span style="font-size:1.08rem;color:#1976d2;display:block;margin-bottom:10px;font-family:'Segoe UI Semibold','Segoe UI',Arial,sans-serif;">Sự cố kỹ thuật liên hệ Zalo:</span>
+                <div class="qr-animated-wrap">
+                    <img 
+                        id="qrDynamic"
+                        src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://zalo.me/0867544809&color=1976d2&bgcolor=ffffff"
+                        alt="QR Zalo"
+                        style="width:120px;height:120px;border-radius:12px;border:2px solid #1976d2;background:#fff;transition:box-shadow 0.4s,border-color 0.4s;">
+                    <div class="qr-animated-border"></div>
+                </div>
+            </div>
         </div>
         <h2>Chấm công theo tháng</h2>
         <div class="form-row">
@@ -639,7 +675,13 @@
                     let isToday = (curY === y && curM === m && curD === d);
                     html += `<th${isToday ? ' class="today-col"' : ''}>${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}</th>`;
                 }
-                html += `<th style="min-width:90px">Ca tổng</th><th style="min-width:120px">Tổng công</th><th style="min-width:120px">Lương từng ca</th><th style="min-width:140px">Lương thực nhận</th>`;
+                // Đổi tên cột "Ca tổng" thành "Tổng ca"
+                html += `<th style="min-width:90px">Tổng ca</th><th style="min-width:120px">Tổng công</th>`;
+                // Chỉ hiện cột Lương từng ca nếu là lương theo ca
+                if (emp.salary_type === 'shift') {
+                    html += `<th style="min-width:120px">Lương từng ca</th>`;
+                }
+                html += `<th style="min-width:140px">Lương thực nhận</th>`;
                 html += `</tr>`;
                 html += `<tr><th></th>`;
                 // Thêm cột Thời gian (dòng thứ 2 header để trống)
@@ -657,6 +699,8 @@
                 let caSalaries = [];
                 let daysWithWork = new Set();
                 let numShifts = shifts.length || 1;
+                let totalCa = 0;
+                let totalSalary = 0;
                 for(let s=0; s<numShifts; ++s) {
                     let rowWork = 0;
                     html += `<tr>`;
@@ -681,32 +725,38 @@
                     let caSalary = parseInt(shifts[s]?.salary || 0);
                     let salary = rowWork * caSalary;
                     caSalaries[s] = salary;
+                    // Tổng ca (số lần ca này được chấm)
                     html += `<td>${rowWork}</td>`;
-                    // Hiển thị lương từng ca ở mỗi hàng
-                    html += `<td>${formatVND(salary)}</td>`;
-                    // Chỉ hiển thị Tổng công và Lương thực nhận ở dòng cuối cùng, các dòng khác để trống
+                    // Chỉ hiển thị Tổng công và Lương thực nhận ở dòng cuối cùng
                     if (s === numShifts - 1) {
-                        let totalCa = caCong.reduce((a, b) => a + b, 0);
-                        let totalSalary = 0;
+                        let tongCong = caCong.reduce((a, b) => a + b, 0);
+                        let tongLuong = 0;
                         if (emp.salary_type === 'shift') {
-                            totalSalary = caSalaries.reduce((a, b) => a + b, 0);
+                            tongLuong = caSalaries.reduce((a, b) => a + b, 0);
                         } else {
                             let baseSalary = emp.base_salary || 0;
-                            let salary = 0;
-                            if (totalCa >= workDaysStd) {
-                                // Nếu dư công thì cộng thêm số công dư * tiền 1 ngày công
-                                salary = baseSalary + ((totalCa - workDaysStd) * salaryPerDay);
+                            let salaryPerDay = parseInt(localStorage.getItem('salaryPerDay_' + emp.id)) 
+                                || parseInt(localStorage.getItem('salaryPerDay') || '0');
+                            let workDaysStd = parseInt(localStorage.getItem('workDaysStd_' + emp.id)) 
+                                || parseInt(localStorage.getItem('workDaysStd') || '26');
+                            if (tongCong >= workDaysStd) {
+                                tongLuong = baseSalary + ((tongCong - workDaysStd) * salaryPerDay);
                             } else {
-                                // Nếu thiếu công thì trừ đi số ngày thiếu * tiền 1 ngày công
-                                salary = baseSalary - ((workDaysStd - totalCa) * salaryPerDay);
-                                if (salary < 0) salary = 0;
+                                tongLuong = baseSalary - ((workDaysStd - tongCong) * salaryPerDay);
+                                if (tongLuong < 0) tongLuong = 0;
                             }
-                            totalSalary = salary;
                         }
-                        html += `<td>${totalCa}</td>`;
-                        html += `<td>${formatVND(totalSalary)}</td>`;
+                        html += `<td>${tongCong}</td>`;
+                        if (emp.salary_type === 'shift') {
+                            html += `<td>${formatVND(caSalaries[s])}</td>`;
+                        }
+                        html += `<td>${formatVND(tongLuong)}</td>`;
                     } else {
-                        html += `<td></td><td></td>`;
+                        html += `<td></td>`;
+                        if (emp.salary_type === 'shift') {
+                            html += `<td>${formatVND(caSalaries[s])}</td>`;
+                        }
+                        html += `<td></td>`;
                     }
                     html += `</tr>`;
                 }
