@@ -1,5 +1,5 @@
 // CODE_VERSION: Đổi chuỗi này mỗi lần thay đổi code để hiển thị version mới trên menu
-const CODE_VERSION = '1.1.5'; // ví dụ: '1.1.5'
+const CODE_VERSION = '2.0.0'; // ví dụ: '2.0.0'
 
 function renderMenu(active) {
     // Xóa menu cũ nếu có
@@ -282,12 +282,11 @@ function renderMenu(active) {
     nav.innerHTML = `
         <div class="navbar-logo" style="position:relative;">
             <span class="navbar-logo-icon">🕒</span>
-            TimePro HR
-            <span style="position:relative;display:inline-block;">
-                M
+            TimePro <span style="position:relative;display:inline-block;">
+                HRM
                 <span id="app-version-number" style="
                     position: absolute;
-                    left: 70%;
+                    left: 85%;
                     top: -15px;
                     font-size: 11px;
                     color: #fff;
@@ -315,6 +314,7 @@ function renderMenu(active) {
             <button onclick="location.href='work_schedule.html'"${active==='work_schedule'?' class="active"':''}>Lịch làm việc</button>
             <button onclick="location.href='setup.html'"${active==='setup'?' class="active"':''}>Thiết Lập</button>
             <button onclick="location.href='att.html'"${active==='att'?' class="active"':''}>Chấm công</button>
+            <!-- ĐÃ BỎ NÚT CHẤM CÔNG QR -->
             <button onclick="location.href='payroll.html'"${active==='payroll'?' class="active"':''}>Bảng lương</button>
             <button onclick="location.href='payroll_report.html'"${active==='payroll_report'?' class="active"':''}>Lập BC Lương</button>
             <button onclick="location.href='about-mksof.html'"${active==='about'?' class="active"':''}>Giới thiệu</button>
@@ -328,7 +328,6 @@ function renderMenu(active) {
                 <button type="button" class="menu-import-btn" onclick="document.getElementById('importDataInput').click()">Nhập dữ liệu</button>
                 <input id="importDataInput" type="file" accept=".json" onchange="importAllData && importAllData(event)">
                 <button type="button" class="menu-telegram-btn" onclick="sendAllDataToTelegramBot()">Gửi dữ liệu về Bot</button>
-                <!-- Đã bỏ nút Lịch Sử -->
             </div>
         </div>
     `;
@@ -380,6 +379,25 @@ function renderMenu(active) {
         document.body.appendChild(div.lastElementChild);
         document.body.appendChild(div.lastChild); // Thêm popup version history
     }
+
+    // BỎ popup QR Checkin nếu chưa có
+    // if (!document.getElementById('popup-qr-checkin-overlay')) {
+    //     const qrPopupHtml = `
+    //     <div id="popup-qr-checkin-overlay" style="display:none; position:fixed; z-index:10010; left:0; top:0; width:100vw; height:100vh; background:#0007; align-items:center; justify-content:center;">
+    //         <div id="popup-qr-checkin-box" style="background:#fff; border-radius:12px; box-shadow:0 8px 32px #0003; padding:28px 24px 22px 24px; min-width:320px; max-width:95vw; display:flex; flex-direction:column; align-items:center; position:relative;">
+    //             <div style="font-size:20px; font-weight:600; color:#1976d2; margin-bottom:12px;">Chấm Công Bằng Mã QR</div>
+    //             <div id="qr-reader" style="width:320px; height:240px; background:#eee; border-radius:8px; display:flex; align-items:center; justify-content:center; margin-bottom:12px;">
+    //                 <span style="color:#888;">[Camera QR sẽ hiển thị ở đây]</span>
+    //             </div>
+    //             <div id="qr-result" style="font-size:15px; color:#43a047; margin-bottom:10px;"></div>
+    //             <button id="popup-qr-checkin-close" style="background:#eee; color:#1976d2; border:none; border-radius:6px; padding:7px 22px; font-size:15px; font-weight:600; cursor:pointer; transition:background 0.18s;">Đóng</button>
+    //         </div>
+    //     </div>
+    //     `;
+    //     const div = document.createElement('div');
+    //     div.innerHTML = qrPopupHtml;
+    //     document.body.appendChild(div.firstElementChild);
+    // }
 
     // XÓA popup lịch sử thao tác và các hàm liên quan
     // XÓA window.addHistoryLog, window.showHistoryLogPopup, setupAutoHistoryLog, popup-history-log-overlay
@@ -489,6 +507,8 @@ function renderMenu(active) {
     function showSuccessPopup(msg) {
         const overlay = document.getElementById('popup-success-overlay');
         const msgDiv = document.getElementById('popup-success-msg');
+        // Sửa lỗi: Nếu overlay hoặc msgDiv chưa tồn tại, không làm gì
+        if (!overlay || !msgDiv) return;
         msgDiv.textContent = msg;
         overlay.style.display = 'flex';
         document.getElementById('popup-success-ok').onclick = function() {
@@ -501,7 +521,8 @@ function renderMenu(active) {
             if (e.key === 'Escape') overlay.style.display = 'none';
         };
         setTimeout(() => {
-            document.getElementById('popup-success-ok').focus();
+            const okBtn = document.getElementById('popup-success-ok');
+            if (okBtn) okBtn.focus();
         }, 100);
     }
 
@@ -534,7 +555,10 @@ function renderMenu(active) {
                 localStorage.removeItem('menuColor');
                 overlay.style.display = 'none';
                 showSuccessPopup(msgText);
-                renderMenu(active);
+                // Tự động F5 lại trang sau khi chọn phiên bản
+                setTimeout(() => {
+                    location.reload();
+                }, 600);
             }
             if (key === '22062002Pro') {
                 setVersion('Pro', 'Đã nâng cấp lên phiên bản Pro!');
@@ -577,8 +601,13 @@ function renderMenu(active) {
     function showVersionHistoryPopup() {
         const overlay = document.getElementById('popup-version-history-overlay');
         const content = document.getElementById('popup-version-history-content');
-        // Danh sách lịch sử phiên bản (từ 1.0.0 đến 1.1.5, mỗi bản một cải tiến)
+        // Danh sách lịch sử phiên bản (từ 1.0.0 đến 2.0.0, mỗi bản một cải tiến)
         const history = [
+            {
+                version: '2.0.0',
+                date: '15/6/2025',
+                note: 'Nâng cấp lên V2: Thêm tính năng Chấm Công Bằng Mã QR và tinh chỉnh danh sách nhân viên đa năng.'
+            },
             {
                 version: '1.1.5',
                 date: '10/6/2025',
@@ -724,6 +753,26 @@ function renderMenu(active) {
     // Gán sự kiện click cho số version để mở popup lịch sử phiên bản
     document.getElementById('app-version-number').onclick = showVersionHistoryPopup;
 
+    // Gợi ý tinh chỉnh menu nhân viên đa năng (bạn sẽ xử lý chi tiết ở emp.html)
+    // if (active === 'emp') {
+    //     setTimeout(() => {
+    //         const empMenu = document.querySelector('.navbar-menu');
+    //         if (empMenu && !document.getElementById('emp-quick-actions')) {
+    //             const div = document.createElement('div');
+    //             div.id = 'emp-quick-actions';
+    //             div.style.display = 'flex';
+    //             div.style.gap = '8px';
+    //             div.style.marginLeft = '16px';
+    //             div.innerHTML = `
+    //                 <button onclick="searchEmployee()" style="background:#fff; color:#1976d2; border:1px solid #1976d2; border-radius:6px; padding:6px 14px; font-size:14px; font-weight:600; cursor:pointer;">Tìm kiếm</button>
+    //                 <button onclick="exportEmployeeExcel()" style="background:#fff; color:#43a047; border:1px solid #43a047; border-radius:6px; padding:6px 14px; font-size:14px; font-weight:600; cursor:pointer;">Xuất Excel</button>
+    //                 <button onclick="quickAddEmployee()" style="background:#fff; color:#ff9800; border:1px solid #ff9800; border-radius:6px; padding:6px 14px; font-size:14px; font-weight:600; cursor:pointer;">Thêm nhanh</button>
+    //             `;
+    //             empMenu.appendChild(div);
+    //         }
+    //     }, 300);
+    // }
+
     // Lưu lại menu đang active để render lại đúng tab khi đổi version
     window._lastActiveMenu = active;
 
@@ -866,3 +915,190 @@ function sendAllDataToTelegramBot() {
 // window.addHistoryLog('Xem bảng lương', 'Mở bảng lương tháng 5/2025');
 // window.addHistoryLog('Xuất dữ liệu', 'Xuất toàn bộ dữ liệu ra file');
 // window.addHistoryLog('Nhập dữ liệu', 'Nhập dữ liệu từ file qlnv_data.json');
+
+// Thêm lịch sử version mới
+function showVersionHistoryPopup() {
+    const overlay = document.getElementById('popup-version-history-overlay');
+    const content = document.getElementById('popup-version-history-content');
+    // Danh sách lịch sử phiên bản (từ 1.0.0 đến 2.0.0, mỗi bản một cải tiến)
+    const history = [
+        {
+            version: '2.0.0',
+            date: '15/6/2025',
+            note: 'Nâng cấp lên V2: Thêm tính năng Chấm Công Bằng Mã QR và tinh chỉnh danh sách nhân viên đa năng.'
+        },
+        {
+            version: '1.1.5',
+            date: '10/6/2025',
+            note: 'Thêm popup lịch sử phiên bản khi nhấn vào số version.'
+        },
+        {
+            version: '1.1.4',
+            date: '5/6/2025',
+            note: 'Cải thiện tốc độ xuất dữ liệu và sửa lỗi nhỏ giao diện.'
+        },
+        {
+            version: '1.1.3',
+            date: '30/5/2025',
+            note: 'Thêm chức năng gửi dữ liệu về Telegram Bot.'
+        },
+        {
+            version: '1.1.2',
+            date: '25/5/2025',
+            note: 'Bổ sung xuất lịch làm việc và ca mẫu lịch làm việc vào dữ liệu xuất file.'
+        },
+        {
+            version: '1.1.1',
+            date: '20/5/2025',
+            note: 'Tối ưu popup nhập key và giao diện menu.'
+        },
+        {
+            version: '1.1.0',
+            date: '15/5/2025',
+            note: 'Thêm popup nhập key nâng cấp phiên bản (Free/Pro/Business).'
+        },
+        {
+            version: '1.0.9',
+            date: '10/5/2025',
+            note: 'Thêm chức năng nhập/xuất toàn bộ dữ liệu (JSON).'
+        },
+        {
+            version: '1.0.8',
+            date: '7/5/2025',
+            note: 'Thêm chức năng ghi chú cá nhân cho từng nhân viên.'
+        },
+        {
+            version: '1.0.7',
+            date: '5/5/2025',
+            note: 'Thêm chức năng lập báo cáo lương tổng hợp theo tháng.'
+        },
+        {
+            version: '1.0.6',
+            date: '3/5/2025',
+            note: 'Thêm chức năng bảng lương chi tiết từng nhân viên.'
+        },
+        {
+            version: '1.0.5',
+            date: '2/5/2025',
+            note: 'Thêm chức năng chấm công theo ca và lịch làm việc.'
+        },
+        {
+            version: '1.0.4',
+            date: '1/5/2025',
+            note: 'Thêm chức năng thiết lập ca làm việc và lịch làm việc tuần.'
+        },
+        {
+            version: '1.0.3',
+            date: '30/4/2025',
+            note: 'Thêm chức năng quản lý danh sách nhân viên.'
+        },
+        {
+            version: '1.0.2',
+            date: '28/4/2025',
+            note: 'Thêm giao diện menu mới và tối ưu trải nghiệm người dùng.'
+        },
+        {
+            version: '1.0.1',
+            date: '25/4/2025',
+            note: 'Thêm chức năng đăng nhập và phân quyền cơ bản.'
+        },
+        {
+            version: '1.0.0',
+            date: '20/4/2025',
+            note: 'Ra mắt phiên bản đầu tiên với các chức năng cơ bản: chấm công, xem danh sách nhân viên, xuất dữ liệu.'
+        }
+    ];
+    // Lấy version hiện tại
+    let currentVersion = CODE_VERSION;
+    // Nếu đã từng chuyển version thủ công thì lấy version đó để hiển thị
+    if (localStorage.getItem('selectedCodeVersion')) {
+        currentVersion = localStorage.getItem('selectedCodeVersion');
+    }
+    content.innerHTML = history.map(h =>
+        `<div style="margin-bottom:12px;">
+            <b style="color:#1976d2;">V${h.version}</b>
+            <span style="color:#888; font-size:13px; margin-left:8px;">(${h.date})</span>
+            <div style="margin-left:12px; margin-top:2px;">- ${h.note}</div>
+            ${h.version === currentVersion ? `<span style="margin-left:12px; color:#43a047; font-size:13px;">(Đang dùng)</span>` : ''}
+        </div>`
+    ).join('') +
+    `<div style="margin-top:18px; text-align:center;">
+        <button id="btn-check-update" style="background:#1976d2; color:#fff; border:none; border-radius:6px; padding:7px 22px; font-size:15px; font-weight:600; cursor:pointer; transition:background 0.18s;">
+            Kiểm tra cập nhật
+        </button>
+        <span id="check-update-msg" style="display:inline-block; margin-left:12px; color:#1976d2; font-size:14px;"></span>
+    </div>`;
+    overlay.style.display = 'flex';
+
+    // Bỏ sự kiện chuyển về bản khác
+
+    // Sự kiện kiểm tra cập nhật
+    document.getElementById('btn-check-update').onclick = function() {
+        const msg = document.getElementById('check-update-msg');
+        msg.textContent = 'Đang kiểm tra...';
+        setTimeout(() => {
+            if (currentVersion === history[0].version) {
+                msg.textContent = 'Bạn đang dùng phiên bản mới nhất!';
+            } else {
+                msg.innerHTML = `Có phiên bản mới: V${history[0].version}. <button id="btn-update-now" style="background:#43a047; color:#fff; border:none; border-radius:5px; padding:3px 12px; font-size:13px; cursor:pointer; margin-left:8px;">Cập nhật ngay</button>`;
+                document.getElementById('btn-update-now').onclick = function() {
+                    localStorage.setItem('selectedCodeVersion', history[0].version);
+                    showSuccessPopup('Đã cập nhật lên phiên bản mới nhất V' + history[0].version + '. Đang cập nhật lại giao diện...');
+                    setTimeout(() => {
+                        renderMenu(window._lastActiveMenu || 'index');
+                    }, 600);
+                };
+            }
+        }, 900);
+    };
+
+    document.getElementById('popup-version-history-ok').onclick = function() {
+        overlay.style.display = 'none';
+    };
+    document.getElementById('popup-version-history-close').onclick = function() {
+        overlay.style.display = 'none';
+    };
+    overlay.onkeydown = function(e) {
+        if (e.key === 'Escape') overlay.style.display = 'none';
+    };
+    setTimeout(() => {
+        document.getElementById('popup-version-history-ok').focus();
+    }, 100);
+}
+
+// Thêm hàm mở popup QR Checkin
+// function showQRCheckinPopup() {
+//     const overlay = document.getElementById('popup-qr-checkin-overlay');
+//     const qrReader = document.getElementById('qr-reader');
+//     const qrResult = document.getElementById('qr-result');
+//     if (!overlay) return;
+//     overlay.style.display = 'flex';
+//     qrResult.textContent = '';
+//     // TODO: Tích hợp thư viện quét QR tại đây (ví dụ html5-qrcode hoặc jsQR)
+//     // Hiện tại chỉ là demo khung, bạn sẽ tích hợp sau
+//     qrReader.innerHTML = '<span style="color:#888;">[Camera QR sẽ hiển thị ở đây]</span>';
+//     // Đóng popup
+//     document.getElementById('popup-qr-checkin-close').onclick = function() {
+//         overlay.style.display = 'none';
+//         // TODO: Dừng camera nếu có
+//     };
+//     overlay.onkeydown = function(e) {
+//         if (e.key === 'Escape') overlay.style.display = 'none';
+//     };
+//     // Ghi log mở popup QR
+//     window.addHistoryLog && window.addHistoryLog('Mở popup Chấm công QR', '');
+// }
+
+// Gợi ý các hàm đa năng cho danh sách nhân viên (bạn sẽ xử lý chi tiết ở emp.html)
+// window.searchEmployee = function() {
+//     window.addHistoryLog && window.addHistoryLog('Tìm kiếm nhân viên', '');
+//     alert('Tính năng tìm kiếm sẽ được xử lý ở emp.html!');
+// };
+// window.exportEmployeeExcel = function() {
+//     window.addHistoryLog && window.addHistoryLog('Xuất Excel nhân viên', '');
+//     alert('Tính năng xuất Excel sẽ được xử lý ở emp.html!');
+// };
+// window.quickAddEmployee = function() {
+//     window.addHistoryLog && window.addHistoryLog('Thêm nhanh nhân viên', '');
+//     alert('Tính năng thêm nhanh sẽ được xử lý ở emp.html!');
+// };

@@ -126,7 +126,8 @@
         <div id="payrollTableWrap"></div>
     </div>
     <script>
-        let employees = JSON.parse(localStorage.getItem('employees') || '[]');
+        // Lấy danh sách nhân viên, chỉ lấy nhân viên chưa bị ẩn
+        let employees = JSON.parse(localStorage.getItem('employees') || '[]').filter(e => !e.hidden);
         let attendanceByMonth = JSON.parse(localStorage.getItem('attendanceByMonth') || '{}');
         let workDaysStd = parseInt(localStorage.getItem('workDaysStd') || '26');
         let salaryPerDay = parseInt(localStorage.getItem('salaryPerDay') || '0');

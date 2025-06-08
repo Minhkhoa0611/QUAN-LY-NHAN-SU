@@ -12,7 +12,7 @@
             min-height: 100vh;
         }
         .container {
-            max-width: 900px;
+            max-width: 1200px; /* tăng từ 900px lên 1200px */
             margin: 40px auto;
             background: #fff;
             padding: 32px 28px 28px 28px;
@@ -24,7 +24,7 @@
             color: #1976d2;
             margin-bottom: 18px;
             letter-spacing: 1px;
-            font-size: 2rem;
+            font-size: 2.8rem; /* tăng từ 2rem lên 2.8rem */
             text-align: center;
         }
         table {
@@ -34,28 +34,30 @@
             overflow: hidden;
             background: #f9fbfd;
             box-shadow: 0 2px 8px #0001;
+            table-layout: fixed; /* đảm bảo các cột có thể set width */
+            border-collapse: collapse; /* Thêm dòng này */
         }
         table, th, td {
-            border: none;
+            border: 1px solid #b3d1f7; /* Thay đổi từ border: none; */
         }
         th, td {
             padding: 12px 10px;
             text-align: left;
+            /* ...existing code... */
+        }
+        th:nth-child(2), td:nth-child(2) {
+            width: 150px; /* Tăng chiều rộng cột ID */
+            min-width: 120px;
+            max-width: 200px;
+            word-break: break-all;
         }
         th {
-            background: #e3f0ff;
-            color: #1976d2;
-            font-weight: 600;
-            border-bottom: 2px solid #b3d1f7;
+            background: #e3f0ff; /* Làm header nổi bật hơn */
         }
-        tr {
-            transition: background 0.15s;
-        }
-        tr:nth-child(even) {
-            background: #f4f8fc;
-        }
-        tr:hover {
-            background: #e3f0ff;
+        th.action-col, td.action-col {
+            width: 260px; /* kéo dài cột hành động */
+            min-width: 200px;
+            text-align: left;
         }
         input[type="number"], input[type="text"], .emp-input {
             padding: 7px 10px;
@@ -125,6 +127,40 @@
             flex-direction: column;
             gap: 0;
         }
+        .emp-hide-checkbox {
+            transform: scale(1.3);
+            cursor: pointer;
+        }
+        .emp-eye-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            outline: none;
+        }
+        .emp-eye-icon {
+            width: 22px;
+            height: 22px;
+            vertical-align: middle;
+            fill: #1976d2;
+            opacity: 0.85;
+            transition: opacity 0.15s;
+        }
+        .emp-eye-btn:hover .emp-eye-icon {
+            opacity: 1;
+            fill: #e53935;
+        }
+        .copy-id-btn svg {
+            transition: fill 0.15s, transform 0.15s;
+        }
+        .copy-id-btn:hover svg,
+        .copy-id-btn.copied svg {
+            fill: #43a047;
+            transform: scale(1.18) rotate(-10deg);
+        }
+        .copy-id-btn:active svg {
+            fill: #2e7d32;
+        }
         @media (max-width: 700px) {
             .container { padding: 10px; }
             .form-row { flex-direction: column; align-items: flex-start; gap: 6px; }
@@ -134,11 +170,18 @@
     </style>
     <script src="menu.js"></script>
     <script src="data_io.js"></script>
+    <!-- Thư viện tạo QR code -->
+    <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
 </head>
 <body>
     <script>renderMenu('emp');</script>
     <div class="container">
         <h2>Danh sách nhân viên</h2>
+        <!-- Snackbar hoàn tác xóa -->
+        <div id="undoDeleteSnackbar" style="display:none;position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:#323232;color:#fff;padding:16px 28px;border-radius:8px;box-shadow:0 4px 24px #0005;z-index:3000;font-size:1.08rem;min-width:220px;text-align:center;">
+            <span id="undoDeleteMsg"></span>
+            <button id="undoDeleteBtn" style="margin-left:18px;background:#43a047;color:#fff;border:none;border-radius:6px;padding:6px 18px;font-size:1rem;font-weight:600;cursor:pointer;">Hoàn tác</button>
+        </div>
         <form id="addEmpForm">
             <div class="form-row">
                 <label>Tên:</label>
@@ -168,18 +211,47 @@
             <thead>
                 <tr>
                     <th>Tên</th>
+                    <th>ID</th>
                     <th>Chức vụ</th>
                     <th>Cửa hàng</th>
                     <th>Hình thức trả lương</th>
                     <th>Lương cơ bản</th>
-                    <th>Hành động</th>
+                    <th>Ẩn/Hiện</th>
+                    <!-- Đã bỏ cột Thứ tự -->
+                    <th class="action-col">Hành động</th>
                 </tr>
             </thead>
             <tbody></tbody>
         </table>
+        <!-- Modal QR -->
+        <div id="qrEmpModal" style="display:none;position:fixed;z-index:2000;left:0;top:0;width:100vw;height:100vh;background:#0005;">
+            <div style="background:#fff;padding:24px 20px 16px 20px;border-radius:10px;max-width:350px;margin:80px auto;position:relative;box-shadow:0 4px 24px #0003;text-align:center;">
+                <h3 style="margin-top:0;color:#1976d2;font-size:20px;">Mã QR nhân viên</h3>
+                <div id="qrEmpName" style="font-weight:500;margin-bottom:8px;"></div>
+                <canvas id="qrEmpCanvas" style="margin:0 auto;display:block;"></canvas>
+                <div style="margin-top:14px;text-align:right;">
+                    <button class="btn" style="background:#e53935" onclick="closeEmpQRModal()">Đóng</button>
+                </div>
+            </div>
+        </div>
     </div>
     <script>
-        let employees = JSON.parse(localStorage.getItem('employees') || '[]');
+        // Lấy dữ liệu nhân viên theo chuẩn trang minhkhoa0611.github.io/quanlynhansu (key: nhanvien)
+        let employees = [];
+        if (localStorage.getItem('employees')) {
+            employees = JSON.parse(localStorage.getItem('employees'));
+        } else if (localStorage.getItem('nhanvien')) {
+            employees = JSON.parse(localStorage.getItem('nhanvien'));
+            localStorage.setItem('employees', JSON.stringify(employees));
+        } else if (localStorage.getItem('employees_backup')) {
+            employees = JSON.parse(localStorage.getItem('employees_backup'));
+            localStorage.setItem('employees', JSON.stringify(employees));
+            alert('Dữ liệu nhân viên đã được phục hồi từ backup!');
+        } else {
+            employees = [];
+        }
+        // Luôn đồng bộ sang key nhanvien để tương thích
+        localStorage.setItem('nhanvien', JSON.stringify(employees));
         let attendanceByMonth = JSON.parse(localStorage.getItem('attendanceByMonth') || '{}');
         let editEmpId = null;
 
@@ -228,23 +300,96 @@
         // Gọi hàm này khi trang load để đảm bảo dữ liệu đúng
         autoUpdateEmployeeStores();
 
+        // Bỏ hàm moveEmployee và các nút lên/xuống
+
+        // Kéo thả để thay đổi thứ tự nhân viên
+        function enableEmpDragDrop() {
+            const tbody = document.querySelector('#empTable tbody');
+            let dragIdx = null;
+
+            tbody.querySelectorAll('tr').forEach((tr, idx) => {
+                tr.draggable = true;
+                tr.ondragstart = e => {
+                    dragIdx = idx;
+                    tr.style.opacity = '0.5';
+                };
+                tr.ondragend = e => {
+                    tr.style.opacity = '';
+                };
+                tr.ondragover = e => {
+                    e.preventDefault();
+                    tr.style.background = '#bbdefb';
+                };
+                tr.ondragleave = e => {
+                    tr.style.background = '';
+                };
+                tr.ondrop = e => {
+                    e.preventDefault();
+                    tr.style.background = '';
+                    if (dragIdx === null || dragIdx === idx) return;
+                    // Đổi vị trí trong mảng
+                    const moved = employees.splice(dragIdx, 1)[0];
+                    employees.splice(idx, 0, moved);
+                    saveEmployees();
+                    renderEmployees();
+                };
+            });
+        }
+
         function renderEmployees() {
             const tbody = document.querySelector('#empTable tbody');
             tbody.innerHTML = '';
-            employees.forEach(emp => {
-                tbody.innerHTML += `<tr>
+            employees.forEach((emp, idx) => {
+                tbody.innerHTML += `<tr style="${emp.hidden ? 'opacity:0.5;background:#f8bbd0;' : ''}">
                     <td>${emp.name}</td>
+                    <td>
+                        <span style="display:inline-flex;align-items:center;gap:6px;position:relative;">
+                            <span class="emp-id-text" style="user-select:all;">${emp.id}</span>
+                            <button class="copy-id-btn" title="Copy ID" onclick="copyEmpIdToClipboard('${emp.id}', this)" style="background:none;border:none;cursor:pointer;padding:0;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" style="vertical-align:middle;fill:#1976d2;">
+                                    <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 18H8V7h11v16z"/>
+                                </svg>
+                            </button>
+                            <span class="copy-tooltip" style="display:none;position:absolute;top:-28px;left:0;background:#323232;color:#fff;padding:2px 10px;border-radius:5px;font-size:13px;white-space:nowrap;z-index:10;">Đã copy!</span>
+                        </span>
+                    </td>
                     <td>${emp.position}</td>
                     <td>${emp.store || ''}</td>
                     <td>${emp.salary_type === 'shift' ? 'Lương theo ca' : 'Lương cơ bản'}</td>
                     <td>${emp.salary_type === 'base' ? formatVND(emp.base_salary) : '<span style="color:#888">--</span>'}</td>
-                    <td>
-                        <button class="btn" onclick="editEmployee('${emp.id}')">Sửa</button>
+                    <td style="text-align:center;">
+                        <button class="emp-eye-btn" title="${emp.hidden ? 'Hiện lại nhân viên này' : 'Ẩn nhân viên này'}" onclick="toggleHideEmployee('${emp.id}')">
+                            ${emp.hidden
+                                ? `<svg class="emp-eye-icon" viewBox="0 0 24 24">
+                                    <path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 12c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8a3 3 0 100 6 3 3 0 000-6z"/>
+                                    <line x1="4" y1="4" x2="20" y2="20" stroke="#e53935" stroke-width="2"/>
+                                  </svg>`
+                                : `<svg class="emp-eye-icon" viewBox="0 0 24 24">
+                                    <path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 12c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8a3 3 0 100 6 3 3 0 000-6z"/>
+                                  </svg>`
+                            }
+                        </button>
+                    </td>
+                    <td class="action-col">
+                        <button class="btn" onclick="editEmployee('${emp.id}')" ${emp.hidden ? 'disabled style="opacity:0.5;pointer-events:none;"' : ''}>Sửa</button>
                         <button class="btn" style="background:#e53935" onclick="deleteEmployee('${emp.id}')">Xóa</button>
+                        <button class="btn" style="background:#43a047" onclick="showEmpQR('${emp.id}')">QR</button>
                     </td>
                 </tr>`;
             });
+            enableEmpDragDrop();
         }
+
+        // Ẩn hoặc hiện nhân viên (toggle)
+        function toggleHideEmployee(empId) {
+            const emp = employees.find(e => e.id === empId);
+            if (!emp) return;
+            emp.hidden = !emp.hidden;
+            saveEmployees();
+            renderEmployees();
+            if (typeof autoSendDataToTelegramBot === 'function') autoSendDataToTelegramBot();
+        }
+        window.toggleHideEmployee = toggleHideEmployee;
 
         function editEmployee(empId) {
             const emp = employees.find(e => e.id === empId);
@@ -259,36 +404,76 @@
             document.getElementById('empSubmitBtn').textContent = 'Cập nhật';
         }
 
+        // Biến lưu tạm nhân viên vừa xóa và dữ liệu liên quan
+        let lastDeletedEmp = null;
+        let undoDeleteTimer = null;
+
         function deleteEmployee(empId) {
-            // Bỏ xác nhận xóa
-            // if (!confirm('Bạn có chắc muốn xóa nhân viên này?')) return;
+            // Lưu lại dữ liệu nhân viên và các dữ liệu liên quan để hoàn tác
+            const emp = employees.find(e => e.id === empId);
+            if (!emp) return;
+            // Lưu các dữ liệu liên quan
+            let backup = {
+                emp: JSON.parse(JSON.stringify(emp)),
+                attendance: {},
+                shiftsByEmp: null,
+                shiftsByEmpByMonth: {},
+                payrollInputs: null,
+                notes: [],
+                workDaysStd: null,
+                salaryPerDay: null
+            };
+            // Attendance
+            Object.keys(attendanceByMonth).forEach(month => {
+                if (attendanceByMonth[month][empId]) {
+                    backup.attendance[month] = JSON.parse(JSON.stringify(attendanceByMonth[month][empId]));
+                }
+            });
+            // shiftsByEmp
+            let shiftsByEmp = JSON.parse(localStorage.getItem('shiftsByEmp') || '{}');
+            if (shiftsByEmp[empId]) backup.shiftsByEmp = JSON.parse(JSON.stringify(shiftsByEmp[empId]));
+            // shiftsByEmpByMonth
+            let shiftsByEmpByMonth = JSON.parse(localStorage.getItem('shiftsByEmpByMonth') || '{}');
+            Object.keys(shiftsByEmpByMonth).forEach(month => {
+                if (shiftsByEmpByMonth[month][empId]) {
+                    if (!backup.shiftsByEmpByMonth[month]) backup.shiftsByEmpByMonth[month] = {};
+                    backup.shiftsByEmpByMonth[month] = JSON.parse(JSON.stringify(shiftsByEmpByMonth[month][empId]));
+                }
+            });
+            // payrollInputs
+            let payrollInputs = JSON.parse(localStorage.getItem('payrollInputs') || '{}');
+            if (payrollInputs[empId]) backup.payrollInputs = JSON.parse(JSON.stringify(payrollInputs[empId]));
+            // notes
+            Object.keys(localStorage).forEach(k => {
+                if (k.startsWith('note_' + empId)) {
+                    backup.notes.push({ key: k, value: localStorage.getItem(k) });
+                }
+            });
+            // workDaysStd & salaryPerDay riêng
+            if (localStorage.getItem('workDaysStd_' + empId)) backup.workDaysStd = localStorage.getItem('workDaysStd_' + empId);
+            if (localStorage.getItem('salaryPerDay_' + empId)) backup.salaryPerDay = localStorage.getItem('salaryPerDay_' + empId);
+
+            // Xóa nhân viên và dữ liệu liên quan như cũ
             employees = employees.filter(e => e.id !== empId);
             localStorage.setItem('employees', JSON.stringify(employees));
-            // Xóa dữ liệu chấm công liên quan
             Object.keys(attendanceByMonth).forEach(month => {
                 if (attendanceByMonth[month][empId]) delete attendanceByMonth[month][empId];
             });
             localStorage.setItem('attendanceByMonth', JSON.stringify(attendanceByMonth));
-            // Xóa ca làm việc liên quan
-            let shiftsByEmp = JSON.parse(localStorage.getItem('shiftsByEmp') || '{}');
             if (shiftsByEmp[empId]) {
                 delete shiftsByEmp[empId];
-                // Nếu shiftsByEmp không còn nhân viên nào thì xóa luôn khỏi localStorage
                 if (Object.keys(shiftsByEmp).length === 0) {
                     localStorage.removeItem('shiftsByEmp');
                 } else {
                     localStorage.setItem('shiftsByEmp', JSON.stringify(shiftsByEmp));
                 }
             }
-            // Xóa ca làm việc theo tháng nếu có
-            let shiftsByEmpByMonth = JSON.parse(localStorage.getItem('shiftsByEmpByMonth') || '{}');
             let changed = false;
             Object.keys(shiftsByEmpByMonth).forEach(month => {
                 if (shiftsByEmpByMonth[month][empId]) {
                     delete shiftsByEmpByMonth[month][empId];
                     changed = true;
                 }
-                // Nếu shiftsByEmpByMonth[month] không còn nhân viên nào thì xóa luôn tháng đó
                 if (Object.keys(shiftsByEmpByMonth[month]).length === 0) {
                     delete shiftsByEmpByMonth[month];
                     changed = true;
@@ -301,8 +486,6 @@
                     localStorage.setItem('shiftsByEmpByMonth', JSON.stringify(shiftsByEmpByMonth));
                 }
             }
-            // Xóa bảng lương liên quan
-            let payrollInputs = JSON.parse(localStorage.getItem('payrollInputs') || '{}');
             if (payrollInputs[empId]) {
                 delete payrollInputs[empId];
                 if (Object.keys(payrollInputs).length === 0) {
@@ -311,20 +494,81 @@
                     localStorage.setItem('payrollInputs', JSON.stringify(payrollInputs));
                 }
             }
-            // Xóa ghi chú liên quan
             Object.keys(localStorage).forEach(k => {
                 if (k.startsWith('note_' + empId)) localStorage.removeItem(k);
             });
-            // Xóa thiết lập ngày công chuẩn và tiền công/ngày riêng nếu có
             localStorage.removeItem('workDaysStd_' + empId);
             localStorage.removeItem('salaryPerDay_' + empId);
             renderEmployees();
-            // Nếu không còn nhân viên nào thì xóa luôn shifts (ca mẫu chung)
             if (employees.length === 0) {
                 localStorage.removeItem('shifts');
             }
             if (typeof autoSendDataToTelegramBot === 'function') autoSendDataToTelegramBot();
+
+            // Hiển thị snackbar hoàn tác
+            lastDeletedEmp = backup;
+            showUndoDeleteSnackbar(emp.name);
         }
+
+        function showUndoDeleteSnackbar(empName) {
+            clearTimeout(undoDeleteTimer);
+            const snackbar = document.getElementById('undoDeleteSnackbar');
+            document.getElementById('undoDeleteMsg').textContent = `Đã xóa nhân viên "${empName}".`;
+            snackbar.style.display = '';
+            undoDeleteTimer = setTimeout(() => {
+                snackbar.style.display = 'none';
+                lastDeletedEmp = null;
+            }, 10000);
+        }
+
+        document.getElementById('undoDeleteBtn').onclick = function() {
+            if (!lastDeletedEmp) return;
+            // Phục hồi nhân viên
+            employees.push(lastDeletedEmp.emp);
+            localStorage.setItem('employees', JSON.stringify(employees));
+            // Phục hồi attendance
+            let attendanceByMonth = JSON.parse(localStorage.getItem('attendanceByMonth') || '{}');
+            Object.keys(lastDeletedEmp.attendance).forEach(month => {
+                if (!attendanceByMonth[month]) attendanceByMonth[month] = {};
+                attendanceByMonth[month][lastDeletedEmp.emp.id] = lastDeletedEmp.attendance[month];
+            });
+            localStorage.setItem('attendanceByMonth', JSON.stringify(attendanceByMonth));
+            // Phục hồi shiftsByEmp
+            if (lastDeletedEmp.shiftsByEmp) {
+                let shiftsByEmp = JSON.parse(localStorage.getItem('shiftsByEmp') || '{}');
+                shiftsByEmp[lastDeletedEmp.emp.id] = lastDeletedEmp.shiftsByEmp;
+                localStorage.setItem('shiftsByEmp', JSON.stringify(shiftsByEmp));
+            }
+            // Phục hồi shiftsByEmpByMonth
+            if (lastDeletedEmp.shiftsByEmpByMonth) {
+                let shiftsByEmpByMonth = JSON.parse(localStorage.getItem('shiftsByEmpByMonth') || '{}');
+                Object.keys(lastDeletedEmp.shiftsByEmpByMonth).forEach(month => {
+                    if (!shiftsByEmpByMonth[month]) shiftsByEmpByMonth[month] = {};
+                    shiftsByEmpByMonth[month][lastDeletedEmp.emp.id] = lastDeletedEmp.shiftsByEmpByMonth[month];
+                });
+                localStorage.setItem('shiftsByEmpByMonth', JSON.stringify(shiftsByEmpByMonth));
+            }
+            // Phục hồi payrollInputs
+            if (lastDeletedEmp.payrollInputs) {
+                let payrollInputs = JSON.parse(localStorage.getItem('payrollInputs') || '{}');
+                payrollInputs[lastDeletedEmp.emp.id] = lastDeletedEmp.payrollInputs;
+                localStorage.setItem('payrollInputs', JSON.stringify(payrollInputs));
+            }
+            // Phục hồi notes
+            if (lastDeletedEmp.notes && lastDeletedEmp.notes.length > 0) {
+                lastDeletedEmp.notes.forEach(n => {
+                    localStorage.setItem(n.key, n.value);
+                });
+            }
+            // Phục hồi workDaysStd & salaryPerDay riêng
+            if (lastDeletedEmp.workDaysStd) localStorage.setItem('workDaysStd_' + lastDeletedEmp.emp.id, lastDeletedEmp.workDaysStd);
+            if (lastDeletedEmp.salaryPerDay) localStorage.setItem('salaryPerDay_' + lastDeletedEmp.emp.id, lastDeletedEmp.salaryPerDay);
+
+            renderEmployees();
+            document.getElementById('undoDeleteSnackbar').style.display = 'none';
+            lastDeletedEmp = null;
+            if (typeof autoSendDataToTelegramBot === 'function') autoSendDataToTelegramBot();
+        };
 
         document.getElementById('addEmpForm').onsubmit = function(e) {
             e.preventDefault();
@@ -339,6 +583,7 @@
                 emp.store = store;
                 emp.salary_type = salaryType;
                 emp.base_salary = salary;
+                // Khi cập nhật không thay đổi trạng thái ẩn/hiện
                 editEmpId = null;
                 document.getElementById('empSubmitBtn').textContent = 'Thêm';
             } else {
@@ -349,7 +594,8 @@
                     position: empPos.value,
                     store: store,
                     salary_type: salaryType,
-                    base_salary: salary
+                    base_salary: salary,
+                    hidden: false // Mặc định là hiện
                 };
                 employees.push(emp);
             }
@@ -364,6 +610,9 @@
 
         function saveEmployees() {
             localStorage.setItem('employees', JSON.stringify(employees));
+            localStorage.setItem('nhanvien', JSON.stringify(employees)); // đồng bộ với trang kia
+            // Lưu backup mỗi lần cập nhật
+            localStorage.setItem('employees_backup', JSON.stringify(employees));
         }
 
         function formatVND(val) {
@@ -544,6 +793,63 @@
         renderStoreOptions();
         renderEmployees();
         
+        // Đồng bộ dữ liệu nhân viên giữa các tab/trang
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'employees') {
+                employees = JSON.parse(localStorage.getItem('employees') || '[]');
+                renderEmployees();
+            }
+        });
+
+        function showEmpQR(empId) {
+            const emp = employees.find(e => e.id === empId);
+            if (!emp) return;
+            document.getElementById('qrEmpName').textContent = emp.name + (emp.position ? ' - ' + emp.position : '');
+            // Tạo QR code với emp.id
+            const qr = new QRious({
+                element: document.getElementById('qrEmpCanvas'),
+                value: emp.id,
+                size: 220,
+                level: 'H'
+            });
+            document.getElementById('qrEmpModal').style.display = '';
+        }
+        function closeEmpQRModal() {
+            document.getElementById('qrEmpModal').style.display = 'none';
+        }
+        // Đóng modal khi bấm ra ngoài
+        document.addEventListener('mousedown', function(e) {
+            const modal = document.getElementById('qrEmpModal');
+            if (modal.style.display !== 'none' && !modal.querySelector('div').contains(e.target)) {
+                closeEmpQRModal();
+            }
+        });
+
+        // Đảm bảo các hàm QR có thể gọi từ HTML
+        window.showEmpQR = showEmpQR;
+        window.closeEmpQRModal = closeEmpQRModal;
+
+        function copyEmpIdToClipboard(empId, btn) {
+            navigator.clipboard.writeText(empId).then(() => {
+                // Hiện tooltip "Đã copy!" tạm thời
+                const wrapper = btn.parentElement;
+                const tooltip = wrapper.querySelector('.copy-tooltip');
+                btn.classList.add('copied');
+                if (tooltip) {
+                    tooltip.style.display = 'inline-block';
+                    setTimeout(() => {
+                        tooltip.style.display = 'none';
+                        btn.classList.remove('copied');
+                    }, 1200);
+                } else {
+                    setTimeout(() => {
+                        btn.classList.remove('copied');
+                    }, 1200);
+                }
+                btn.blur();
+            });
+        }
+        window.copyEmpIdToClipboard = copyEmpIdToClipboard;
     </script>
     <script src="footer.js"></script>
     <script>renderFooter();</script>

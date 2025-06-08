@@ -517,7 +517,8 @@
         </div>
     </div>
     <script>
-        let employees = JSON.parse(localStorage.getItem('employees') || '[]');
+        // Khi lấy danh sách nhân viên, chỉ lấy nhân viên chưa bị ẩn
+        let employees = JSON.parse(localStorage.getItem('employees') || '[]').filter(e => !e.hidden);
         let shiftsByEmpByMonth = JSON.parse(localStorage.getItem('shiftsByEmpByMonth') || '{}');
         let workSchedules = JSON.parse(localStorage.getItem('workSchedules') || '{}');
         let currentPopupDay = null;

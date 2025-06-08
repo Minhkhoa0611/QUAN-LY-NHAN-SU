@@ -288,10 +288,10 @@
         </script>
     </div>
     <script>
-        // Lấy danh sách nhân viên từ localStorage
+        // Lấy danh sách nhân viên từ localStorage, chỉ lấy nhân viên chưa bị ẩn
         function getEmployees() {
             try {
-                return JSON.parse(localStorage.getItem('employees') || '[]');
+                return JSON.parse(localStorage.getItem('employees') || '[]').filter(e => !e.hidden);
             } catch { return []; }
         }
 

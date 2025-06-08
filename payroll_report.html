@@ -47,7 +47,7 @@
             return payrollInputs?.[empId]?.[month]?.[field] ?? defaultVal;
         }
         function renderPayrollReport() {
-            let employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            let employees = JSON.parse(localStorage.getItem('employees') || '[]').filter(e => !e.hidden);
             // Lọc theo cửa hàng
             const store = document.getElementById('reportStoreSelect').value;
             if (store) employees = employees.filter(e => (e.store || '') === store);
