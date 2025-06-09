@@ -407,6 +407,9 @@
         </div>
     </div>
     <script>
+        // Đưa khai báo này lên đầu script
+        let qrScanner = null;
+
         // Lấy danh sách nhân viên, chỉ lấy nhân viên chưa bị ẩn
         let employees = JSON.parse(localStorage.getItem('employees') || '[]').filter(e => !e.hidden);
         let attendanceByMonth = JSON.parse(localStorage.getItem('attendanceByMonth') || '{}');
@@ -471,12 +474,13 @@
             localStorage.setItem('att_selectedEmpId', this.value);
             renderAttendance();
             updateSalaryTypeDisplay();
-            showMissingAttendanceAlert();
+            // Nếu không có hàm showMissingAttendanceAlert thì comment dòng này lại để tránh lỗi
+            // showMissingAttendanceAlert();
         });
 
         document.getElementById('attMonth').addEventListener('change', function() {
             renderAttendance();
-            showMissingAttendanceAlert();
+            // showMissingAttendanceAlert();
         });
 
         function updateSalaryTypeDisplay() {
@@ -740,7 +744,7 @@
                             tongLuong = caSalaries.reduce((a, b) => a + b, 0);
                         } else {
                             let baseSalary = emp.base_salary || 0;
-                            let salaryPerDay = parseInt(localStorage.getItem('salaryPerDay_' + emp.id)) 
+                            let salaryPerDay = parseInt(localStorage.getItem('salaryPerDay' + emp.id)) 
                                 || parseInt(localStorage.getItem('salaryPerDay') || '0');
                             let workDaysStd = parseInt(localStorage.getItem('workDaysStd_' + emp.id)) 
                                 || parseInt(localStorage.getItem('workDaysStd') || '26');
@@ -766,6 +770,10 @@
                     html += `</tr>`;
                 }
                 html += `</tbody></table></div>`;
+                // XÓA hoặc BỎ nút Lưu chấm công ở dưới bảng
+                // html += `<div style="text-align:right;margin:12px 0 24px 0;">
+                //     <button class="btn" onclick="saveAttendanceAndNotify()">Lưu chấm công</button>
+                // </div>`;
             }
             document.getElementById('attTableWrap').innerHTML = html;
             // Render shift setup table for selected employee
@@ -1025,7 +1033,6 @@
         }
 
         // --- QR chấm công ---
-        let qrScanner = null;
         function openQRModal() {
             document.getElementById('qrModal').style.display = '';
             if (!qrScanner) {
@@ -1065,21 +1072,108 @@
             renderAttendance();
             updateSalaryTypeDisplay();
 
-            // Chấm công cho ngày hiện tại, ca đầu tiên
+            // Chấm công cho ngày hiện tại, cho phép chọn ca nếu có nhiều ca
             const now = new Date();
             const month = now.toISOString().slice(0,7);
             const day = now.getDate();
+            // Lấy danh sách ca làm của nhân viên trong tháng hiện tại
+            let shifts = [];
+            try {
+                shifts = getShiftsForEmpMonth(emp.id, month);
+            } catch(e) {
+                shifts = [];
+            }
             if (!attendanceByMonth[month]) attendanceByMonth[month] = {};
             if (!attendanceByMonth[month][emp.id]) attendanceByMonth[month][emp.id] = {};
-            // Chấm công ca đầu tiên (index 0)
             if (!attendanceByMonth[month][emp.id][day]) attendanceByMonth[month][emp.id][day] = [];
-            if (!attendanceByMonth[month][emp.id][day].includes(0)) attendanceByMonth[month][emp.id][day].push(0);
+
+            if (shifts.length <= 1) {
+                // Nếu chỉ có 1 ca thì chấm công ca đầu tiên (index 0)
+                if (!attendanceByMonth[month][emp.id][day].includes(0)) attendanceByMonth[month][emp.id][day].push(0);
+                saveAttendanceMonth();
+                renderAttendance();
+                showQRSuccessPopup(`Chấm công thành công cho <b>${emp.name}</b> ngày ${day}/${now.getMonth()+1}`);
+            } else {
+                // Nếu có nhiều ca, hiện popup chọn ca
+                showShiftSelectPopup(emp, month, day, shifts);
+            }
+        }
+
+        // Hiển thị popup chọn ca khi quét QR
+        function showShiftSelectPopup(emp, month, day, shifts) {
+            // Xóa popup cũ nếu có
+            let old = document.getElementById('qrShiftSelectPopup');
+            if (old) old.remove();
+            const div = document.createElement('div');
+            div.id = 'qrShiftSelectPopup';
+            div.style.position = 'fixed';
+            div.style.top = '0';
+            div.style.left = '0';
+            div.style.width = '100vw';
+            div.style.height = '100vh';
+            div.style.background = 'rgba(0,0,0,0.18)';
+            div.style.zIndex = '3000';
+            div.style.display = 'flex';
+            div.style.alignItems = 'center';
+            div.style.justifyContent = 'center';
+            // Lấy các ca đã chấm công trong ngày
+            let checkedArr = (attendanceByMonth[month] && attendanceByMonth[month][emp.id] && attendanceByMonth[month][emp.id][day]) || [];
+            div.innerHTML = `
+                <div style="
+                    background:#fff;
+                    color:#1976d2;
+                    padding:28px 32px 22px 32px;
+                    border-radius:16px;
+                    box-shadow:0 4px 24px #1976d280;
+                    font-size:1.13rem;
+                    font-weight:600;
+                    max-width:90vw;
+                    text-align:center;
+                    border:2px solid #1976d2;
+                    display:flex;
+                    flex-direction:column;
+                    align-items:center;
+                ">
+                    <div style="font-size:1.18rem;font-weight:bold;margin-bottom:12px;">
+                        Xin chọn ca làm để chấm công cho <span style="color:#e53935">${emp.name}</span> ngày ${day}/${(month.split('-')[1])}
+                    </div>
+                    <form id="qrShiftSelectForm" style="margin-bottom:18px;">
+                        ${shifts.map((s, idx) => `
+                            <label style="display:block;margin:8px 0;font-size:1.08rem;cursor:pointer;">
+                                <input type="checkbox" name="shiftIdx" value="${idx}" style="margin-right:8px;vertical-align:middle;" ${checkedArr.includes(idx) ? 'checked' : ''}>
+                                ${s.name ? s.name : 'Ca ' + (idx+1)} (${s.start || '--'} - ${s.end || '--'})
+                            </label>
+                        `).join('')}
+                    </form>
+                    <div style="margin-top:8px;">
+                        <button type="button" class="btn" style="margin-right:12px;" onclick="submitShiftSelectForQR('${emp.id}','${month}',${day})">OK</button>
+                        <button type="button" class="btn" style="background:#e53935" onclick="document.getElementById('qrShiftSelectPopup').remove()">Đóng</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(div);
+        }
+
+        // Hàm xử lý khi bấm OK trên popup chọn ca QR
+        function submitShiftSelectForQR(empId, month, day) {
+            const form = document.getElementById('qrShiftSelectForm');
+            if (!form) return;
+            const checked = Array.from(form.querySelectorAll('input[name="shiftIdx"]:checked')).map(cb => parseInt(cb.value));
+            if (!attendanceByMonth[month]) attendanceByMonth[month] = {};
+            if (!attendanceByMonth[month][empId]) attendanceByMonth[month][empId] = {};
+            attendanceByMonth[month][empId][day] = checked;
+            // Nếu không chọn ca nào thì xóa luôn ngày đó
+            if (checked.length === 0) delete attendanceByMonth[month][empId][day];
             saveAttendanceMonth();
             renderAttendance();
-
-            // Hiển thị popup thông báo thành công và tự ẩn sau 5s
-            showQRSuccessPopup(`Chấm công thành công cho <b>${emp.name}</b> ngày ${day}/${now.getMonth()+1}`);
+            let emp = employees.find(e => e.id == empId);
+            let now = new Date();
+            showQRSuccessPopup(`Chấm công thành công cho <b>${emp ? emp.name : ''}</b> ngày ${day}/${now.getMonth()+1}${checked.length > 0 ? ' (' + checked.map(i => (shiftsByEmpByMonth[month][empId]?.[i]?.name || 'Ca ' + (i+1))).join(', ') + ')' : ''}`);
+            // Đóng popup
+            let div = document.getElementById('qrShiftSelectPopup');
+            if (div) div.remove();
         }
+        window.submitShiftSelectForQR = submitShiftSelectForQR;
 
         // Thêm hàm popup thông báo QR thành công
         function showQRSuccessPopup(msg) {
@@ -1107,95 +1201,7 @@
                 if (div.parentNode) div.parentNode.removeChild(div);
             }, 5000);
         }
-
-        // Thêm hàm cảnh báo nếu nhân viên có nhiều ngày không chấm công (chỉ tính đến ngày hiện tại)
-        function showMissingAttendanceAlert() {
-            const empId = document.getElementById('empSelect').value;
-            const month = document.getElementById('attMonth').value;
-            if (!empId || !month) return;
-            const days = daysInMonth(month);
-            let empAtt = (attendanceByMonth[month] && attendanceByMonth[month][empId]) || {};
-            const now = new Date();
-            const [y, m] = month.split('-').map(Number);
-            let maxDay = days;
-            if (now.getFullYear() === y && (now.getMonth() + 1) === m) {
-                maxDay = now.getDate();
-            }
-            // Kiểm tra có ngày nào đã chấm công không
-            let hasAnyAttendance = false;
-            for (let d = 1; d <= maxDay; ++d) {
-                if (empAtt[d] && Array.isArray(empAtt[d]) && empAtt[d].length > 0) {
-                    hasAnyAttendance = true;
-                    break;
-                }
-            }
-            // Nếu không có ngày nào được chấm công thì mới hiện thông báo
-            if (!hasAnyAttendance && maxDay > 0) {
-                const emp = employees.find(e => e.id == empId);
-                const empName = emp ? emp.name : 'Bạn';
-                let msg = `Bạn <b>${empName}</b> ơi, từ đầu tháng đến giờ bạn chưa chấm công ngày nào luôn á!<br>Nhớ chấm công để không bị ảnh hưởng lương nha 😅`;
-                if (!document.getElementById('missingAttAlert')) {
-                    const div = document.createElement('div');
-                    div.id = 'missingAttAlert';
-                    div.style.position = 'fixed';
-                    div.style.top = '0';
-                    div.style.left = '0';
-                    div.style.width = '100vw';
-                    div.style.height = '100vh';
-                    div.style.display = 'flex';
-                    div.style.alignItems = 'center';
-                    div.style.justifyContent = 'center';
-                    div.style.background = 'rgba(0,0,0,0.18)';
-                    div.style.zIndex = '2000';
-                    div.innerHTML = `
-                        <div style="
-                            background:#fff3cd;
-                            color:#b8860b;
-                            padding:24px 36px;
-                            border-radius:16px;
-                            box-shadow:0 4px 24px #ffc10780;
-                            font-size:1.13rem;
-                            font-weight:600;
-                            max-width:90vw;
-                            text-align:center;
-                            border:2px solid #ffc107;
-                            display:flex;
-                            flex-direction:column;
-                            align-items:center;
-                            ">
-                            <div style="margin-bottom:10px;">
-                                <!-- Animated bell SVG -->
-                                <svg width="110" height="110" viewBox="0 0 72 72" style="display:inline-block;" xmlns="http://www.w3.org/2000/svg">
-                                    <g>
-                                        <g>
-                                            <animateTransform attributeName="transform"
-                                                type="rotate"
-                                                values="-10 36 36;10 36 36;-10 36 36"
-                                                keyTimes="0;0.5;1"
-                                                dur="1.2s"
-                                                repeatCount="indefinite"/>
-                                            <path d="M36 12c-9 0-16 7-16 16v10c0 2-1 4-3 5v3h38v-3c-2-1-3-3-3-5V28c0-9-7-16-16-16z"
-                                                fill="#ffc107" stroke="#b8860b" stroke-width="2"/>
-                                            <ellipse cx="36" cy="56" rx="8" ry="4" fill="#ffe082"/>
-                                            <circle cx="36" cy="60" r="4" fill="#ffb300" stroke="#b8860b" stroke-width="1"/>
-                                        </g>
-                                        <circle cx="36" cy="10" r="3" fill="#ffb300" stroke="#b8860b" stroke-width="1"/>
-                                    </g>
-                                </svg>
-                            </div>
-                            <span style="font-size:1.25rem;color:#d32f2f;font-weight:bold;">&#9888;</span>
-                            <div style="margin-top:6px;">${msg}</div>
-                            <button onclick="document.getElementById('missingAttAlert').remove()" style="margin-top:18px;background:#e53935;color:#fff;border:none;border-radius:8px;padding:6px 24px;cursor:pointer;font-size:1.05rem;">Đóng</button>
-                        </div>
-                    `;
-                    document.body.appendChild(div);
-                    setTimeout(() => { if (div.parentNode) div.parentNode.removeChild(div); }, 8000);
-                }
-            } else {
-                const div = document.getElementById('missingAttAlert');
-                if (div) div.remove();
-            }
-        }
+        window.showQRSuccessPopup = showQRSuccessPopup;
     </script>
     <script src="footer.js"></script>
     <script>renderFooter();</script>
