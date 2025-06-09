@@ -403,9 +403,7 @@ function getTongCong(empId, month) {
 
 // Hàm xuất dữ liệu và đồng bộ dữ liệu trên tất cả các trang (gọi ở bất kỳ trang html nào cũng đồng bộ)
 function exportAllDataAndSync() {
-    // Lưu lại toàn bộ dữ liệu hiện tại vào localStorage (nếu có thay đổi trên giao diện)
-    // (Nếu các trang đã tự lưu vào localStorage khi thao tác thì không cần bước này)
-    // Sau đó xuất file như bình thường
+
     exportAllData();
 
     // Gửi tín hiệu đồng bộ cho các tab khác (nếu đang mở nhiều tab)

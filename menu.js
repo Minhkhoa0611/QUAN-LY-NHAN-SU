@@ -1,5 +1,5 @@
 // CODE_VERSION: Đổi chuỗi này mỗi lần thay đổi code để hiển thị version mới trên menu
-const CODE_VERSION = '2.0.0'; // ví dụ: '2.0.0'
+const CODE_VERSION = '2.0.2'; // ví dụ: '2.0.2'
 
 function renderMenu(active) {
     // Xóa menu cũ nếu có
@@ -341,7 +341,7 @@ function renderMenu(active) {
         </div>
         <div class="menu-data-dropdown" tabindex="0">
             <button type="button" class="menu-data-btn" onclick="toggleMenuDataDropdown(event)">
-                ☰ Dữ liệu
+                ⚙️ Cài Đặt
             </button>
             <div class="menu-data-list">
                 <button onclick="exportAllData()" class="menu-export-btn"${active==='export'?' class="active"':''}>Xuất dữ liệu</button>
@@ -406,27 +406,6 @@ function renderMenu(active) {
         }
     }
 
-    // BỎ popup QR Checkin nếu chưa có
-    // if (!document.getElementById('popup-qr-checkin-overlay')) {
-    //     const qrPopupHtml = `
-    //     <div id="popup-qr-checkin-overlay" style="display:none; position:fixed; z-index:10010; left:0; top:0; width:100vw; height:100vh; background:#0007; align-items:center; justify-content:center;">
-    //         <div id="popup-qr-checkin-box" style="background:#fff; border-radius:12px; box-shadow:0 8px 32px #0003; padding:28px 24px 22px 24px; min-width:320px; max-width:95vw; display:flex; flex-direction:column; align-items:center; position:relative;">
-    //             <div style="font-size:20px; font-weight:600; color:#1976d2; margin-bottom:12px;">Chấm Công Bằng Mã QR</div>
-    //             <div id="qr-reader" style="width:320px; height:240px; background:#eee; border-radius:8px; display:flex; align-items:center; justify-content:center; margin-bottom:12px;">
-    //                 <span style="color:#888;">[Camera QR sẽ hiển thị ở đây]</span>
-    //             </div>
-    //             <div id="qr-result" style="font-size:15px; color:#43a047; margin-bottom:10px;"></div>
-    //             <button id="popup-qr-checkin-close" style="background:#eee; color:#1976d2; border:none; border-radius:6px; padding:7px 22px; font-size:15px; font-weight:600; cursor:pointer; transition:background 0.18s;">Đóng</button>
-    //         </div>
-    //     </div>
-    //     `;
-    //     const div = document.createElement('div');
-    //     div.innerHTML = qrPopupHtml;
-    //     document.body.appendChild(div.firstElementChild);
-    // }
-
-    // XÓA popup lịch sử thao tác và các hàm liên quan
-    // XÓA window.addHistoryLog, window.showHistoryLogPopup, setupAutoHistoryLog, popup-history-log-overlay
 
     // Hàm ghi log thao tác (ghi lại mọi thao tác, chỉ lưu local, không gửi bot)
     window.addHistoryLog = function(action, detail) {
@@ -627,8 +606,18 @@ function renderMenu(active) {
     function showVersionHistoryPopup() {
         const overlay = document.getElementById('popup-version-history-overlay');
         const content = document.getElementById('popup-version-history-content');
-        // Danh sách lịch sử phiên bản (từ 1.0.0 đến 2.0.0, mỗi bản một cải tiến)
+        // Danh sách lịch sử phiên bản (từ 1.0.0 đến 2.0.2, mỗi bản một cải tiến)
         const history = [
+            {
+                version: '2.0.2',
+                date: '19/6/2025',
+                note: 'Cập nhật tính doanh thu cho nhân viên lương cơ bản.'
+            },
+            {
+                version: '2.0.1',
+                date: '18/6/2025',
+                note: 'Cập nhật bản vá: Sửa lỗi nhỏ và tối ưu hiệu năng giao diện.'
+            },
             {
                 version: '2.0.0',
                 date: '15/6/2025',
@@ -717,10 +706,6 @@ function renderMenu(active) {
         ];
         // Lấy version hiện tại
         let currentVersion = CODE_VERSION;
-        // Nếu đã từng chuyển version thủ công thì lấy version đó để hiển thị
-        if (localStorage.getItem('selectedCodeVersion')) {
-            currentVersion = localStorage.getItem('selectedCodeVersion');
-        }
         content.innerHTML = history.map(h =>
             `<div style="margin-bottom:12px;">
                 <b style="color:#1976d2;">V${h.version}</b>
@@ -737,25 +722,12 @@ function renderMenu(active) {
         </div>`;
         overlay.style.display = 'flex';
 
-        // Bỏ sự kiện chuyển về bản khác
-
-        // Sự kiện kiểm tra cập nhật
+        // Sự kiện kiểm tra cập nhật: luôn báo đã dùng bản mới nhất
         document.getElementById('btn-check-update').onclick = function() {
             const msg = document.getElementById('check-update-msg');
             msg.textContent = 'Đang kiểm tra...';
             setTimeout(() => {
-                if (currentVersion === history[0].version) {
-                    msg.textContent = 'Bạn đang dùng phiên bản mới nhất!';
-                } else {
-                    msg.innerHTML = `Có phiên bản mới: V${history[0].version}. <button id="btn-update-now" style="background:#43a047; color:#fff; border:none; border-radius:5px; padding:3px 12px; font-size:13px; cursor:pointer; margin-left:8px;">Cập nhật ngay</button>`;
-                    document.getElementById('btn-update-now').onclick = function() {
-                        localStorage.setItem('selectedCodeVersion', history[0].version);
-                        showSuccessPopup('Đã cập nhật lên phiên bản mới nhất V' + history[0].version + '. Đang cập nhật lại giao diện...');
-                        setTimeout(() => {
-                            renderMenu(window._lastActiveMenu || 'index');
-                        }, 600);
-                    };
-                }
+                msg.textContent = 'Bạn đang dùng phiên bản mới nhất!';
             }, 900);
         };
 
@@ -971,11 +943,11 @@ function renderMenu(active) {
     window._lastActiveMenu = active;
 
     // Khi renderMenu, nếu có selectedCodeVersion thì cập nhật lại số version hiển thị
-    const selectedCodeVersion = localStorage.getItem('selectedCodeVersion');
-    if (selectedCodeVersion && selectedCodeVersion !== CODE_VERSION) {
-        const versionNumberEl = document.getElementById('app-version-number');
-        if (versionNumberEl) versionNumberEl.textContent = 'V' + selectedCodeVersion;
-    }
+    // const selectedCodeVersion = localStorage.getItem('selectedCodeVersion');
+    // if (selectedCodeVersion && selectedCodeVersion !== CODE_VERSION) {
+    //     const versionNumberEl = document.getElementById('app-version-number');
+    //     if (versionNumberEl) versionNumberEl.textContent = 'V' + selectedCodeVersion;
+    // }
 
     // Đóng dropdown khi click ngoài hoặc chuyển tab
     document.querySelectorAll('.menu-data-dropdown').forEach(drop => {
@@ -1104,18 +1076,24 @@ function sendAllDataToTelegramBot() {
     }
 }
 
-// Gợi ý sử dụng addHistoryLog ở các thao tác chính (ví dụ):
-// window.addHistoryLog('Chấm công', 'Nhân viên Nguyễn Văn A chấm công ngày 10/6/2025');
-// window.addHistoryLog('Xem bảng lương', 'Mở bảng lương tháng 5/2025');
-// window.addHistoryLog('Xuất dữ liệu', 'Xuất toàn bộ dữ liệu ra file');
-// window.addHistoryLog('Nhập dữ liệu', 'Nhập dữ liệu từ file qlnv_data.json');
+
 
 // Thêm lịch sử version mới
 function showVersionHistoryPopup() {
     const overlay = document.getElementById('popup-version-history-overlay');
     const content = document.getElementById('popup-version-history-content');
-    // Danh sách lịch sử phiên bản (từ 1.0.0 đến 2.0.0, mỗi bản một cải tiến)
+    // Danh sách lịch sử phiên bản (từ 1.0.0 đến 2.0.2, mỗi bản một cải tiến)
     const history = [
+        {
+            version: '2.0.2',
+            date: '19/6/2025',
+            note: 'Cập nhật tính doanh thu cho nhân viên lương cơ bản.'
+        },
+        {
+            version: '2.0.1',
+            date: '18/6/2025',
+            note: 'Cập nhật bản vá: Sửa lỗi nhỏ và tối ưu hiệu năng giao diện.'
+        },
         {
             version: '2.0.0',
             date: '15/6/2025',
@@ -1204,10 +1182,6 @@ function showVersionHistoryPopup() {
     ];
     // Lấy version hiện tại
     let currentVersion = CODE_VERSION;
-    // Nếu đã từng chuyển version thủ công thì lấy version đó để hiển thị
-    if (localStorage.getItem('selectedCodeVersion')) {
-        currentVersion = localStorage.getItem('selectedCodeVersion');
-    }
     content.innerHTML = history.map(h =>
         `<div style="margin-bottom:12px;">
             <b style="color:#1976d2;">V${h.version}</b>
@@ -1224,25 +1198,12 @@ function showVersionHistoryPopup() {
     </div>`;
     overlay.style.display = 'flex';
 
-    // Bỏ sự kiện chuyển về bản khác
-
-    // Sự kiện kiểm tra cập nhật
+    // Sự kiện kiểm tra cập nhật: luôn báo đã dùng bản mới nhất
     document.getElementById('btn-check-update').onclick = function() {
         const msg = document.getElementById('check-update-msg');
         msg.textContent = 'Đang kiểm tra...';
         setTimeout(() => {
-            if (currentVersion === history[0].version) {
-                msg.textContent = 'Bạn đang dùng phiên bản mới nhất!';
-            } else {
-                msg.innerHTML = `Có phiên bản mới: V${history[0].version}. <button id="btn-update-now" style="background:#43a047; color:#fff; border:none; border-radius:5px; padding:3px 12px; font-size:13px; cursor:pointer; margin-left:8px;">Cập nhật ngay</button>`;
-                document.getElementById('btn-update_now').onclick = function() {
-                    localStorage.setItem('selectedCodeVersion', history[0].version);
-                    showSuccessPopup('Đã cập nhật lên phiên bản mới nhất V' + history[0].version + '. Đang cập nhật lại giao diện...');
-                    setTimeout(() => {
-                        renderMenu(window._lastActiveMenu || 'index');
-                    }, 600);
-                };
-            }
+            msg.textContent = 'Bạn đang dùng phiên bản mới nhất!';
         }, 900);
     };
 

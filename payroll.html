@@ -250,13 +250,16 @@
                 let bonusVal = getPayrollInputByMonth(emp.id, monthVal, 'bonus', 0);
                 let penaltyVal = getPayrollInputByMonth(emp.id, monthVal, 'penalty', 0);
                 let advanceVal = getPayrollInputByMonth(emp.id, monthVal, 'advance', 0);
+                // Thêm lấy giá trị doanh thu
+                let revenueVal = getPayrollInputByMonth(emp.id, monthVal, 'revenue', 0);
 
                 html += `<div class="employee-payroll-block">`;
                 html += `<div class="employee-payroll-header">
                     ${emp.name} - Bảng lương tháng 
                     <input type="month" id="payrollMonth_${emp.id}" value="${monthVal}" onchange="calcPayroll()" style="width:140px;">
                 </div>`;
-                html += `<form class="employee-payroll-form" onsubmit="return false;">
+                html += `<form class="employee-payroll-form" onsubmit="return false;">`;
+                html += `
                     <label>TC/LT:
                         <input type="text" id="payrollExtraShifts_${emp.id}" value="${extraShiftsVal}" 
                             onblur="savePayrollInput('${emp.id}','${monthVal}','extraShifts',this.value);calcPayroll()" 
@@ -265,6 +268,20 @@
                         </span>
                         <span class="note-tooltip">Áp dụng cho trường hợp tăng ca hoặc làm giùm (có thể nhập 0.5, 1 hoặc 0,5...)</span>
                     </label>
+                `;
+                // Nếu là lương cơ bản thì thêm mục Doanh Thu
+                if (emp.salary_type !== 'shift') {
+                    html += `
+                    <label>Doanh Thu:
+                        <input type="text" id="payrollRevenue_${emp.id}" value="${revenueVal}" 
+                            oninput="formatCurrencyLiveInput(this)" 
+                            onblur="formatCurrencyLiveInput(this);savePayrollInput('${emp.id}','${monthVal}','revenue',this.value);calcPayroll()">
+                        <span class="note-icon" tabindex="0">!</span>
+                        <span class="note-tooltip">Nhập tổng doanh thu nhân viên đạt được trong tháng này (nếu có)</span>
+                    </label>
+                    `;
+                }
+                html += `
                     <label>Phụ cấp:
                         <input type="text" id="payrollAllowance_${emp.id}" value="${allowanceVal}" 
                             oninput="formatCurrencyLiveInput(this)" 
@@ -306,6 +323,8 @@
                 let bonus = parseCurrency(bonusVal);
                 let penalty = parseCurrency(penaltyVal);
                 let advance = parseCurrency(advanceVal);
+                // Thêm parse doanh thu
+                let revenue = parseCurrency(revenueVal);
                 let extra = extraShifts * (perDayEmp || 0);
 
                 // --- SỬA ĐOẠN NÀY ---
@@ -416,7 +435,8 @@
                         salary = baseSalary - ((stdDays - workdays) * (perDayEmp || 0));
                         if (salary < 0) salary = 0;
                     }
-                    let total = salary + extra + allowance + bonus - penalty - advance;
+                    // Tính tổng lương thực nhận (cộng doanh thu)
+                    let total = salary + extra + allowance + bonus + revenue - penalty - advance;
                     let displayWorkdays = tongCong + extraShifts;
                     let baseSalaryLabel = `${formatVND(baseSalary)} <span style="font-size:12px;color:#888">(Tháng)</span>`;
                     html += `<table class="employee-payroll-table">
@@ -426,6 +446,7 @@
                                 <th>Lương cơ bản</th>
                                 <th>Phụ cấp</th>
                                 <th>Thưởng lễ</th>
+                                <th>Doanh thu</th>
                                 <th>Tiền ứng</th>
                                 <th>Phạt</th>
                                 <th>Lương thực nhận</th>
@@ -437,6 +458,7 @@
                                 <td>${baseSalaryLabel}</td>
                                 <td>${formatVND(allowance)}</td>
                                 <td>${formatVND(bonus)}</td>
+                                <td>${formatVND(revenue)}</td>
                                 <td>${formatVND(advance)}</td>
                                 <td>${formatVND(penalty)}</td>
                                 <td style="font-weight:bold;color:#1976d2;">${formatVND(total)}</td>

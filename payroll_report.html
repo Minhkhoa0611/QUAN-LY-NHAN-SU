@@ -71,6 +71,7 @@
                         <th>Ngày công / Số ca</th>
                         <th>Phụ cấp</th>
                         <th>Thưởng lễ</th>
+                        <th>Doanh thu</th>
                         <th>Phạt</th>
                         <th>Tiền ứng</th>
                         <th>Tổng lương</th>
@@ -78,6 +79,7 @@
                 </thead>
                 <tbody>`;
             let totalAll = 0;
+            let totalRevenue = 0;
             employees.forEach((emp, idx) => {
                 let empAtt = (attendanceByMonth[month] && attendanceByMonth[month][emp.id]) || {};
                 // Lấy ngày công chuẩn và tiền công/ngày riêng cho từng nhân viên nếu có
@@ -91,15 +93,18 @@
                 let bonusVal = getPayrollInput(emp.id, month, 'bonus', 0);
                 let penaltyVal = getPayrollInput(emp.id, month, 'penalty', 0);
                 let advanceVal = getPayrollInput(emp.id, month, 'advance', 0);
+                // Lấy doanh thu
+                let revenueVal = getPayrollInput(emp.id, month, 'revenue', 0);
                 let extraShifts = parseFloat((extraShiftsVal + '').replace(',', '.')) || 0;
                 let allowance = parseCurrency(allowanceVal);
                 let bonus = parseCurrency(bonusVal);
                 let penalty = parseCurrency(penaltyVal);
                 let advance = parseCurrency(advanceVal);
+                let revenue = parseCurrency(revenueVal);
                 let extra = extraShifts * (perDayEmp || 0);
 
                 let total = 0;
-                workdays = 0; // <-- chỉ khai báo 1 lần ở đây
+                workdays = 0;
                 if (emp.salary_type === 'shift') {
                     // Lấy ca/tháng đúng chuẩn
                     let shifts = (shiftsByEmpByMonth[month] && shiftsByEmpByMonth[month][emp.id]) || [];
@@ -143,8 +148,9 @@
                         salary = baseSalary - ((stdDays - workdays) * (perDayEmp || 0));
                         if (salary < 0) salary = 0;
                     }
-                    total = salary + extra + allowance + bonus - penalty - advance;
+                    total = salary + extra + allowance + bonus + revenue - penalty - advance;
                     workdays = workdays + extraShifts;
+                    totalRevenue += revenue;
                 }
                 if (total < 0) total = 0;
                 totalAll += total;
@@ -154,6 +160,7 @@
                     <td>${workdays}</td>
                     <td>${formatVND(allowance)}</td>
                     <td>${formatVND(bonus)}</td>
+                    <td>${emp.salary_type !== 'shift' ? formatVND(revenue) : ''}</td>
                     <td>${formatVND(penalty)}</td>
                     <td>${formatVND(advance)}</td>
                     <td style="font-weight:bold;color:#1976d2;">${formatVND(total)}</td>
@@ -162,12 +169,53 @@
             html += `</tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="6" style="text-align:right;">TỔNG LƯƠNG TOÀN BỘ:</td>
-                        <td style="font-weight:bold;font-size:18px;color:#388e3c;">${formatVND(totalAll)}</td>
+                        <td colspan="7" style="text-align:right;">TỔNG LƯƠNG TOÀN BỘ:</td>
+                        <td colspan="2" style="font-weight:bold;font-size:18px;color:#388e3c;">${formatVND(totalAll)}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="9" style="text-align:left;font-style:italic;color:#1976d2;">
+                            Số tiền bằng chữ: <span id="totalAllText"></span>
+                        </td>
                     </tr>
                 </tfoot>
             </table>`;
             document.getElementById('payrollReportTable').innerHTML = html;
+            // Chuyển số thành chữ và hiển thị
+            document.getElementById('totalAllText').textContent = numberToVietnameseWords(totalAll) + ' đồng';
+        }
+
+        // Hàm chuyển số thành chữ tiếng Việt (đơn giản, đủ dùng cho tổng lương)
+        function numberToVietnameseWords(number) {
+            if (number === 0) return 'không';
+            const dv = ['','một','hai','ba','bốn','năm','sáu','bảy','tám','chín'];
+            const hang = ['','nghìn','triệu','tỷ','nghìn tỷ','triệu tỷ','tỷ tỷ'];
+            function docSo3(so) {
+                let tram = Math.floor(so/100), chuc = Math.floor((so%100)/10), donvi = so%10;
+                let str = '';
+                if (tram > 0) str += dv[tram] + ' trăm';
+                if (chuc > 1) str += (str ? ' ' : '') + dv[chuc] + ' mươi';
+                else if (chuc === 1) str += (str ? ' ' : '') + 'mười';
+                else if (tram > 0 && donvi > 0) str += ' lẻ';
+                if (donvi > 0) {
+                    if (chuc === 0 || chuc === 1) str += (str ? ' ' : '') + dv[donvi];
+                    else if (donvi === 1) str += (str ? ' ' : '') + 'mốt';
+                    else if (donvi === 5) str += (str ? ' ' : '') + 'lăm';
+                    else str += (str ? ' ' : '') + dv[donvi];
+                }
+                return str.trim();
+            }
+            let str = '', i = 0;
+            while (number > 0) {
+                let so3 = number % 1000;
+                if (so3 > 0) {
+                    let s = docSo3(so3);
+                    if (hang[i]) s += ' ' + hang[i];
+                    str = s + (str ? ' ' + str : '');
+                }
+                number = Math.floor(number / 1000);
+                i++;
+            }
+            return str.replace(/\s+/g, ' ').trim();
         }
         function exportAllData() {
             const data = typeof getExportData === 'function' ? getExportData() : {};
