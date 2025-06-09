@@ -16,6 +16,8 @@
     </style>
     <script src="menu.js"></script>
     <script src="data_io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
     <script>renderMenu('payroll_report');</script>
@@ -65,6 +67,9 @@
             }
             let html = `<table>
                 <thead>
+                    <tr>
+                        <th colspan="9" style="font-size:20px;color:#1976d2;text-align:center;padding:12px 0;" id="payrollReportTitle"></th>
+                    </tr>
                     <tr>
                         <th>STT</th>
                         <th>Họ tên</th>
@@ -180,10 +185,109 @@
                 </tfoot>
             </table>`;
             document.getElementById('payrollReportTable').innerHTML = html;
+            // Thêm dòng tiêu đề động đầu bảng
+            const storeSelect = document.getElementById('reportStoreSelect');
+            let storeName = storeSelect.selectedOptions[0].textContent;
+            if (storeSelect.value === '') {
+                // Nếu là tất cả cửa hàng, lấy tên hai cửa hàng đầu tiên
+                const opts = Array.from(storeSelect.options)
+                    .filter(opt => opt.value && opt.value !== '');
+                if (opts.length >= 2) {
+                    storeName = opts[0].textContent + '/' + opts[1].textContent;
+                } else if (opts.length === 1) {
+                    storeName = opts[0].textContent;
+                } else {
+                    storeName = 'Tất cả cửa hàng';
+                }
+            }
+            const [year, monthNum] = document.getElementById('reportMonth').value.split('-');
+            const monthLabel = monthNum ? `Tháng ${parseInt(monthNum,10)}` : '';
+            const yearLabel = year ? `năm ${year}` : '';
+            document.getElementById('payrollReportTitle').textContent = `Báo Cáo Lương ${storeName} ${monthLabel} ${yearLabel}`.replace(/\s+/g, ' ').trim();
             // Chuyển số thành chữ và hiển thị
             document.getElementById('totalAllText').textContent = numberToVietnameseWords(totalAll) + ' đồng';
+
+            // Thêm các nút Save PNG - Copy PNG - Save Excel dưới bảng
+            if (!document.getElementById('payrollReportActions')) {
+                const actionsDiv = document.createElement('div');
+                actionsDiv.id = 'payrollReportActions';
+                actionsDiv.style = 'margin-top:18px;text-align:center;';
+                actionsDiv.innerHTML = `
+                    <button onclick="savePayrollReportPNG()" style="padding:7px 18px;margin:0 6px 8px 0;background:#1976d2;color:#fff;border:none;border-radius:4px;cursor:pointer;">Save PNG</button>
+                    <button onclick="copyPayrollReportPNG()" style="padding:7px 18px;margin:0 6px 8px 0;background:#388e3c;color:#fff;border:none;border-radius:4px;cursor:pointer;">Copy PNG</button>
+                    <button onclick="savePayrollReportExcel()" style="padding:7px 18px;margin:0 6px 8px 0;background:#fbc02d;color:#333;border:none;border-radius:4px;cursor:pointer;">Save Excel</button>
+                `;
+                document.querySelector('.container').appendChild(actionsDiv);
+            }
         }
 
+        // --- Các hàm xuất/chép PNG và Excel ---
+        // Yêu cầu thư viện html2canvas và SheetJS (xlsx) đã được nhúng vào dự án
+
+        function savePayrollReportPNG() {
+            if (typeof html2canvas !== 'function') {
+                alert('Thiếu thư viện html2canvas!');
+                return;
+            }
+            const table = document.querySelector('#payrollReportTable table');
+            // Tạo bản sao table với style white-space: pre-line và font-family giống bảng gốc để giữ khoảng cách chữ
+            const clone = table.cloneNode(true);
+            clone.style.background = '#fff';
+            clone.style.fontFamily = window.getComputedStyle(table).fontFamily || 'Arial, sans-serif';
+            clone.querySelectorAll('td,th').forEach(cell => {
+                cell.style.whiteSpace = 'pre-line';
+                cell.style.letterSpacing = '0.5px'; // tăng nhẹ khoảng cách giữa các ký tự
+                cell.style.fontFamily = clone.style.fontFamily;
+                cell.style.fontSize = window.getComputedStyle(table).fontSize || '16px';
+            });
+            clone.style.position = 'absolute';
+            clone.style.left = '-9999px';
+            document.body.appendChild(clone);
+            html2canvas(clone, {backgroundColor: '#fff', scale: 2}).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'payroll_report.png';
+                link.href = canvas.toDataURL();
+                link.click();
+                document.body.removeChild(clone);
+            });
+        }
+
+        function copyPayrollReportPNG() {
+            if (typeof html2canvas !== 'function' || !navigator.clipboard) {
+                alert('Thiếu thư viện html2canvas hoặc Clipboard API!');
+                return;
+            }
+            const table = document.querySelector('#payrollReportTable table');
+            const clone = table.cloneNode(true);
+            clone.style.background = '#fff';
+            clone.style.fontFamily = window.getComputedStyle(table).fontFamily || 'Arial, sans-serif';
+            clone.querySelectorAll('td,th').forEach(cell => {
+                cell.style.whiteSpace = 'pre-line';
+                cell.style.letterSpacing = '0.5px';
+                cell.style.fontFamily = clone.style.fontFamily;
+                cell.style.fontSize = window.getComputedStyle(table).fontSize || '16px';
+            });
+            clone.style.position = 'absolute';
+            clone.style.left = '-9999px';
+            document.body.appendChild(clone);
+            html2canvas(clone, {backgroundColor: '#fff', scale: 2}).then(canvas => {
+                canvas.toBlob(blob => {
+                    const item = new ClipboardItem({ 'image/png': blob });
+                    navigator.clipboard.write([item]);
+                    document.body.removeChild(clone);
+                });
+            });
+        }
+
+        function savePayrollReportExcel() {
+            if (typeof XLSX === 'undefined') {
+                alert('Thiếu thư viện SheetJS (xlsx)!');
+                return;
+            }
+            const table = document.querySelector('#payrollReportTable table');
+            const wb = XLSX.utils.table_to_book(table, {sheet:"Báo Cáo Lương"});
+            XLSX.writeFile(wb, 'payroll_report.xlsx');
+        }
         // Hàm chuyển số thành chữ tiếng Việt (đơn giản, đủ dùng cho tổng lương)
         function numberToVietnameseWords(number) {
             if (number === 0) return 'không';
