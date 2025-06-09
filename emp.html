@@ -45,18 +45,34 @@
             text-align: left;
             /* ...existing code... */
         }
+        th:nth-child(1), td:nth-child(1) {
+            width: 18%; /* Tên */
+        }
         th:nth-child(2), td:nth-child(2) {
-            width: 150px; /* Tăng chiều rộng cột ID */
+            width: 15%; /* ID */
             min-width: 120px;
             max-width: 200px;
             word-break: break-all;
         }
-        th {
-            background: #e3f0ff; /* Làm header nổi bật hơn */
+        th:nth-child(3), td:nth-child(3) {
+            width: 13%; /* Chức vụ */
+        }
+        th:nth-child(4), td:nth-child(4) {
+            width: 13%; /* Cửa hàng */
+        }
+        th:nth-child(5), td:nth-child(5) {
+            width: 13%; /* Hình thức trả lương */
+        }
+        th:nth-child(6), td:nth-child(6) {
+            width: 13%; /* Lương cơ bản */
+        }
+        th:nth-child(7), td:nth-child(7) {
+            width: 7%; /* Ẩn/Hiện */
         }
         th.action-col, td.action-col {
-            width: 260px; /* kéo dài cột hành động */
-            min-width: 200px;
+            width: 8%; /* thu nhỏ lại */
+            min-width: 80px;
+            max-width: 120px;
             text-align: left;
         }
         input[type="number"], input[type="text"], .emp-input {
@@ -172,6 +188,8 @@
     <script src="data_io.js"></script>
     <!-- Thư viện tạo QR code -->
     <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+    <!-- Thư viện tạo Barcode -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
 <body>
     <script src="intro.js"></script>
@@ -218,7 +236,6 @@
                     <th>Hình thức trả lương</th>
                     <th>Lương cơ bản</th>
                     <th>Ẩn/Hiện</th>
-                    <!-- Đã bỏ cột Thứ tự -->
                     <th class="action-col">Hành động</th>
                 </tr>
             </thead>
@@ -233,6 +250,24 @@
                 <div style="margin-top:14px;text-align:right;">
                     <button class="btn" style="background:#e53935" onclick="closeEmpQRModal()">Đóng</button>
                 </div>
+            </div>
+        </div>
+        <!-- Modal Barcode -->
+        <div id="barcodeEmpModal" style="display:none;position:fixed;z-index:2000;left:0;top:0;width:100vw;height:100vh;background:#0005;">
+            <div style="background:#fff;padding:24px 20px 16px 20px;border-radius:10px;max-width:350px;margin:80px auto;position:relative;box-shadow:0 4px 24px #0003;text-align:center;">
+                <h3 style="margin-top:0;color:#1976d2;font-size:20px;">Mã vạch nhân viên</h3>
+                <div id="barcodeEmpName" style="font-weight:500;margin-bottom:8px;"></div>
+                <svg id="barcodeEmpSvg" style="margin:0 auto;display:block;"></svg>
+                <div style="margin-top:14px;text-align:right;">
+                    <button class="btn" style="background:#e53935" onclick="closeEmpBarcodeModal()">Đóng</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Chi tiết nhân viên -->
+        <div id="empDetailModal" style="display:none;position:fixed;z-index:2100;left:0;top:0;width:100vw;height:100vh;background:#0005;">
+            <div id="empDetailContent" style="background:#fff;padding:24px 20px 16px 20px;border-radius:10px;max-width:400px;margin:80px auto;position:relative;box-shadow:0 4px 24px #0003;">
+                <!-- Nội dung sẽ render động -->
             </div>
         </div>
     </div>
@@ -372,14 +407,150 @@
                         </button>
                     </td>
                     <td class="action-col">
-                        <button class="btn" onclick="editEmployee('${emp.id}')" ${emp.hidden ? 'disabled style="opacity:0.5;pointer-events:none;"' : ''}>Sửa</button>
-                        <button class="btn" style="background:#e53935" onclick="deleteEmployee('${emp.id}')">Xóa</button>
-                        <button class="btn" style="background:#43a047" onclick="showEmpQR('${emp.id}')">QR</button>
+                        <button class="btn" onclick="showEmpDetailModal('${emp.id}')">Chi tiết</button>
                     </td>
                 </tr>`;
             });
             enableEmpDragDrop();
         }
+
+        // Modal chi tiết nhân viên
+        function showEmpDetailModal(empId) {
+            const emp = employees.find(e => e.id === empId);
+            if (!emp) return;
+            const modal = document.getElementById('empDetailModal');
+            const content = document.getElementById('empDetailContent');
+            content.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="font-size:1.2rem;font-weight:600;color:#1976d2;">Chi tiết nhân viên</div>
+                    <button onclick="closeEmpDetailModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#888;">&times;</button>
+                </div>
+                <div style="margin:10px 0 18px 0;">
+                    <div><b>Tên:</b> ${emp.name}</div>
+                    <div><b>ID:</b> ${emp.id}</div>
+                    <div><b>Chức vụ:</b> ${emp.position || ''}</div>
+                    <div><b>Cửa hàng:</b> ${emp.store || ''}</div>
+                    <div><b>Hình thức trả lương:</b> ${emp.salary_type === 'shift' ? 'Lương theo ca' : 'Lương cơ bản'}</div>
+                    <div><b>Lương cơ bản:</b> ${emp.salary_type === 'base' ? formatVND(emp.base_salary) : '<span style="color:#888">--</span>'}</div>
+                </div>
+                <div id="empDetailActionBtns" style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <button class="btn" onclick="showEditEmpInModal('${emp.id}')">Sửa</button>
+                    <button class="btn" style="background:#e53935" onclick="deleteEmployeeFromModal('${emp.id}')">Xóa</button>
+                    <button class="btn" style="background:#43a047" onclick="openQRModalAndHideDetail('${emp.id}')">QR</button>
+                    <button class="btn" style="background:#1976d2" onclick="openBarcodeModalAndHideDetail('${emp.id}')">Barcode</button>
+                </div>
+            `;
+            modal.style.display = '';
+        }
+        window.showEmpDetailModal = showEmpDetailModal;
+
+        // Đóng popup chi tiết khi mở QR/Barcode
+        function openQRModalAndHideDetail(empId) {
+            closeEmpDetailModal();
+            setTimeout(() => showEmpQR(empId), 150);
+        }
+        function openBarcodeModalAndHideDetail(empId) {
+            closeEmpDetailModal();
+            setTimeout(() => showEmpBarcode(empId), 150);
+        }
+        window.openQRModalAndHideDetail = openQRModalAndHideDetail;
+        window.openBarcodeModalAndHideDetail = openBarcodeModalAndHideDetail;
+
+        function closeEmpDetailModal() {
+            document.getElementById('empDetailModal').style.display = 'none';
+        }
+        window.closeEmpDetailModal = closeEmpDetailModal;
+
+        // Sửa nhân viên trong popup
+        function showEditEmpInModal(empId) {
+            const emp = employees.find(e => e.id === empId);
+            if (!emp) return;
+            const content = document.getElementById('empDetailContent');
+            content.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="font-size:1.2rem;font-weight:600;color:#1976d2;">Sửa nhân viên</div>
+                    <button onclick="closeEmpDetailModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#888;">&times;</button>
+                </div>
+                <form id="editEmpModalForm" style="margin-top:12px;">
+                    <div style="margin-bottom:10px;">
+                        <label>Tên:</label>
+                        <input id="editEmpName" class="emp-input" required value="${emp.name}">
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <label>Chức vụ:</label>
+                        <input id="editEmpPos" class="emp-input" value="${emp.position || ''}">
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <label>Cửa hàng:</label>
+                        <select id="editEmpStore" class="emp-input" required>
+                            <option value="LepShop" ${emp.store === 'LepShop' ? 'selected' : ''}>LepShop</option>
+                            <option value="H'farm" ${emp.store === "H'farm" ? 'selected' : ''}>H'farm</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <label>Hình thức trả lương:</label>
+                        <select id="editEmpSalaryType" class="emp-input" required onchange="toggleEditSalaryInput()">
+                            <option value="base" ${emp.salary_type === 'base' ? 'selected' : ''}>Lương cơ bản</option>
+                            <option value="shift" ${emp.salary_type === 'shift' ? 'selected' : ''}>Lương theo ca</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <label>Lương cơ bản:</label>
+                        <input id="editEmpSalary" type="text" class="emp-input" ${emp.salary_type === 'base' ? '' : 'disabled'} value="${emp.salary_type === 'base' ? formatVND(emp.base_salary) : ''}" oninput="formatCurrencyInput(this)">
+                    </div>
+                    <div style="text-align:right;">
+                        <button type="button" class="btn" onclick="closeEmpDetailModal()">Hủy</button>
+                        <button type="submit" class="btn" style="background:#43a047">Lưu</button>
+                    </div>
+                </form>
+            `;
+            // Gắn lại sự kiện submit
+            document.getElementById('editEmpModalForm').onsubmit = function(e) {
+                e.preventDefault();
+                updateEmpFromModal(empId);
+            };
+        }
+        window.showEditEmpInModal = showEditEmpInModal;
+
+        function toggleEditSalaryInput() {
+            const type = document.getElementById('editEmpSalaryType').value;
+            const salaryInput = document.getElementById('editEmpSalary');
+            if (type === 'base') {
+                salaryInput.disabled = false;
+                salaryInput.required = true;
+                salaryInput.style.background = '';
+            } else {
+                salaryInput.disabled = true;
+                salaryInput.required = false;
+                salaryInput.value = '';
+                salaryInput.style.background = '#eee';
+            }
+        }
+        window.toggleEditSalaryInput = toggleEditSalaryInput;
+
+        function updateEmpFromModal(empId) {
+            const emp = employees.find(e => e.id === empId);
+            if (!emp) return;
+            emp.name = document.getElementById('editEmpName').value;
+            emp.position = document.getElementById('editEmpPos').value;
+            emp.store = document.getElementById('editEmpStore').value;
+            emp.salary_type = document.getElementById('editEmpSalaryType').value;
+            emp.base_salary = emp.salary_type === 'base' ? parseCurrency(document.getElementById('editEmpSalary').value) : 0;
+            saveEmployees();
+            renderEmployees();
+            closeEmpDetailModal();
+            if (typeof autoSendDataToTelegramBot === 'function') autoSendDataToTelegramBot();
+        }
+
+        // Xóa nhân viên từ popup
+        function deleteEmployeeFromModal(empId) {
+            const emp = employees.find(e => e.id === empId);
+            if (!emp) return;
+            if (!confirm(`Bạn có chắc chắn muốn xóa nhân viên "${emp.name}"?`)) return;
+            closeEmpDetailModal();
+            setTimeout(() => deleteEmployee(empId), 200);
+        }
+        window.deleteEmployeeFromModal = deleteEmployeeFromModal;
 
         // Ẩn hoặc hiện nhân viên (toggle)
         function toggleHideEmployee(empId) {
@@ -410,10 +581,13 @@
         let undoDeleteTimer = null;
 
         function deleteEmployee(empId) {
-            // Lưu lại dữ liệu nhân viên và các dữ liệu liên quan để hoàn tác
             const emp = employees.find(e => e.id === empId);
             if (!emp) return;
-            // Lưu các dữ liệu liên quan
+            // Thêm xác nhận nếu gọi trực tiếp (không qua popup)
+            if (typeof deleteEmployeeFromModal !== "undefined" && event === undefined) {
+                if (!confirm(`Bạn có chắc chắn muốn xóa nhân viên "${emp.name}"?`)) return;
+            }
+            // Lưu lại dữ liệu nhân viên và các dữ liệu liên quan để hoàn tác
             let backup = {
                 emp: JSON.parse(JSON.stringify(emp)),
                 attendance: {},
@@ -818,17 +992,41 @@
         function closeEmpQRModal() {
             document.getElementById('qrEmpModal').style.display = 'none';
         }
-        // Đóng modal khi bấm ra ngoài
+
+        // Barcode functions
+        function showEmpBarcode(empId) {
+            const emp = employees.find(e => e.id === empId);
+            if (!emp) return;
+            document.getElementById('barcodeEmpName').textContent = emp.name + (emp.position ? ' - ' + emp.position : '');
+            // Tạo barcode với emp.id
+            JsBarcode("#barcodeEmpSvg", emp.id, {
+                format: "CODE128",
+                lineColor: "#1976d2",
+                width: 2,
+                height: 80,
+                displayValue: true,
+                fontSize: 18,
+                margin: 10
+            });
+            document.getElementById('barcodeEmpModal').style.display = '';
+        }
+        function closeEmpBarcodeModal() {
+            document.getElementById('barcodeEmpModal').style.display = 'none';
+        }
+
+        // Đóng modal barcode khi bấm ra ngoài
         document.addEventListener('mousedown', function(e) {
-            const modal = document.getElementById('qrEmpModal');
-            if (modal.style.display !== 'none' && !modal.querySelector('div').contains(e.target)) {
-                closeEmpQRModal();
+            const barcodeModal = document.getElementById('barcodeEmpModal');
+            if (barcodeModal && barcodeModal.style.display !== 'none' && !barcodeModal.querySelector('div').contains(e.target)) {
+                closeEmpBarcodeModal();
             }
         });
 
-        // Đảm bảo các hàm QR có thể gọi từ HTML
+        // Đảm bảo các hàm QR/barcode có thể gọi từ HTML
         window.showEmpQR = showEmpQR;
         window.closeEmpQRModal = closeEmpQRModal;
+        window.showEmpBarcode = showEmpBarcode;
+        window.closeEmpBarcodeModal = closeEmpBarcodeModal;
 
         function copyEmpIdToClipboard(empId, btn) {
             navigator.clipboard.writeText(empId).then(() => {

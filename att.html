@@ -394,7 +394,7 @@
     <!-- Modal quét QR -->
     <div id="qrModal" style="display:none;position:fixed;z-index:2000;left:0;top:0;width:100vw;height:100vh;background:#0005;">
         <div style="background:#fff;padding:24px 20px 16px 20px;border-radius:10px;max-width:400px;margin:80px auto;position:relative;box-shadow:0 4px 24px #0003;">
-            <h3 style="margin-top:0;color:#1976d2;font-size:20px;">Quét mã QR để chấm công</h3>
+            <h3 style="margin-top:0;color:#1976d2;font-size:20px;">Quét mã QR hoặc mã vạch để chấm công</h3>
             <div id="qr-reader" style="width:320px;position:relative;">
                 <!-- Khung quét QR -->
                 <div class="qr-scan-frame">
@@ -1047,8 +1047,14 @@
         }
         // Xử lý khi quét QR thành công
         function handleQRCheckin(qrData) {
-            // Giả sử qrData là employee id
-            let emp = employees.find(e => e.id == qrData);
+            // Cho phép qrData chứa bất kỳ chuỗi nào, chỉ cần có đúng ID nhân viên
+            let emp = null;
+            for (let i = 0; i < employees.length; ++i) {
+                if (qrData && qrData.includes(employees[i].id)) {
+                    emp = employees[i];
+                    break;
+                }
+            }
             if (!emp) {
                 alert('Mã QR không hợp lệ hoặc không tìm thấy nhân viên!');
                 return;

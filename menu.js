@@ -1388,3 +1388,26 @@ function showMenuSettingPopup() {
         document.getElementById('popup-menu-setting-ok').focus();
     }, 100);
 }
+
+// Thêm hàm xuất báo cáo lương sang Excel
+function savePayrollReportExcel() {
+    if (typeof XLSX === 'undefined') {
+        alert('Thiếu thư viện SheetJS (xlsx)!');
+        return;
+    }
+    const table = document.querySelector('#payrollReportTable table');
+    // Lấy tên file động theo tiêu đề báo cáo, nếu không có thì dùng mẫu cố định
+    let title = '';
+    const titleEl = document.getElementById('payrollReportTitle');
+    if (titleEl && titleEl.textContent.trim()) {
+        title = titleEl.textContent.trim().replace(/[\\/:*?"<>|]/g, '');
+    } else {
+        // Lấy tháng/năm hiện tại nếu không có tiêu đề
+        const now = new Date();
+        const month = now.getMonth() + 1;
+        const year = now.getFullYear();
+        title = `Báo Cáo Lương Tháng ${month} Năm ${year}`;
+    }
+    const wb = XLSX.utils.table_to_book(table, {sheet:"Báo Cáo Lương"});
+    XLSX.writeFile(wb, title + '.xlsx');
+}

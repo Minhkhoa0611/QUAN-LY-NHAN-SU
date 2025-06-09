@@ -213,8 +213,8 @@
                 actionsDiv.id = 'payrollReportActions';
                 actionsDiv.style = 'margin-top:18px;text-align:center;';
                 actionsDiv.innerHTML = `
-                    <button onclick="savePayrollReportPNG()" style="padding:7px 18px;margin:0 6px 8px 0;background:#1976d2;color:#fff;border:none;border-radius:4px;cursor:pointer;">Save PNG</button>
-                    <button onclick="copyPayrollReportPNG()" style="padding:7px 18px;margin:0 6px 8px 0;background:#388e3c;color:#fff;border:none;border-radius:4px;cursor:pointer;">Copy PNG</button>
+                    <button onclick="savePayrollReportImage()" style="padding:7px 18px;margin:0 6px 8px 0;background:#1976d2;color:#fff;border:none;border-radius:4px;cursor:pointer;">Save Image</button>
+                    <button onclick="copyPayrollReportPNG()" style="padding:7px 18px;margin:0 6px 8px 0;background:#388e3c;color:#fff;border:none;border-radius:4px;cursor:pointer;">Copy Image</button>
                     <button onclick="savePayrollReportExcel()" style="padding:7px 18px;margin:0 6px 8px 0;background:#fbc02d;color:#333;border:none;border-radius:4px;cursor:pointer;">Save Excel</button>
                 `;
                 document.querySelector('.container').appendChild(actionsDiv);
@@ -224,19 +224,18 @@
         // --- Các hàm xuất/chép PNG và Excel ---
         // Yêu cầu thư viện html2canvas và SheetJS (xlsx) đã được nhúng vào dự án
 
-        function savePayrollReportPNG() {
+        function savePayrollReportImage() {
             if (typeof html2canvas !== 'function') {
                 alert('Thiếu thư viện html2canvas!');
                 return;
             }
             const table = document.querySelector('#payrollReportTable table');
-            // Tạo bản sao table với style white-space: pre-line và font-family giống bảng gốc để giữ khoảng cách chữ
             const clone = table.cloneNode(true);
             clone.style.background = '#fff';
             clone.style.fontFamily = window.getComputedStyle(table).fontFamily || 'Arial, sans-serif';
             clone.querySelectorAll('td,th').forEach(cell => {
                 cell.style.whiteSpace = 'pre-line';
-                cell.style.letterSpacing = '0.5px'; // tăng nhẹ khoảng cách giữa các ký tự
+                cell.style.letterSpacing = '0.5px';
                 cell.style.fontFamily = clone.style.fontFamily;
                 cell.style.fontSize = window.getComputedStyle(table).fontSize || '16px';
             });
@@ -244,11 +243,43 @@
             clone.style.left = '-9999px';
             document.body.appendChild(clone);
             html2canvas(clone, {backgroundColor: '#fff', scale: 2}).then(canvas => {
-                const link = document.createElement('a');
-                link.download = 'payroll_report.png';
-                link.href = canvas.toDataURL();
-                link.click();
                 document.body.removeChild(clone);
+                // Lấy tên file động theo tiêu đề báo cáo
+                window._payrollReportImageTitle = document.getElementById('payrollReportTitle').textContent.trim().replace(/[\\/:*?"<>|]/g, '');
+                // Hiển thị dialog chọn định dạng file
+                const formats = [
+                    {ext: 'png', mime: 'image/png', label: 'PNG'},
+                    {ext: 'jpeg', mime: 'image/jpeg', label: 'JPEG'},
+                    {ext: 'webp', mime: 'image/webp', label: 'WEBP'}
+                ];
+                let dialog = document.createElement('div');
+                dialog.style = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:#0005;z-index:9999;display:flex;align-items:center;justify-content:center;';
+                dialog.innerHTML = `
+                    <div style="background:#fff;padding:24px 32px;border-radius:8px;box-shadow:0 2px 12px #0003;text-align:center;">
+                        <div style="font-size:18px;font-weight:500;margin-bottom:16px;">Chọn định dạng ảnh để lưu</div>
+                        ${formats.map(f => `<button style="margin:0 8px 0 0;padding:8px 18px;border-radius:4px;border:none;background:#1976d2;color:#fff;cursor:pointer;" onclick="window._savePayrollReportImageDownload('${f.ext}','${f.mime}')">${f.label}</button>`).join('')}
+                        <button style="margin-left:12px;padding:8px 18px;border-radius:4px;border:none;background:#ccc;color:#333;cursor:pointer;" onclick="window._closePayrollReportImageDialog()">Hủy</button>
+                    </div>
+                `;
+                document.body.appendChild(dialog);
+
+                window._savePayrollReportImageDownload = function(ext, mime) {
+                    const title = window._payrollReportImageTitle || 'payroll_report';
+                    canvas.toBlob(function(blob) {
+                        const link = document.createElement('a');
+                        link.download = title + '.' + ext;
+                        link.href = URL.createObjectURL(blob);
+                        link.click();
+                        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+                        window._closePayrollReportImageDialog();
+                    }, mime, ext === 'jpeg' ? 0.95 : 1);
+                };
+                window._closePayrollReportImageDialog = function() {
+                    document.body.removeChild(dialog);
+                    delete window._savePayrollReportImageDownload;
+                    delete window._closePayrollReportImageDialog;
+                    delete window._payrollReportImageTitle;
+                };
             });
         }
 
@@ -273,7 +304,14 @@
             html2canvas(clone, {backgroundColor: '#fff', scale: 2}).then(canvas => {
                 canvas.toBlob(blob => {
                     const item = new ClipboardItem({ 'image/png': blob });
-                    navigator.clipboard.write([item]);
+                    navigator.clipboard.write([item]).then(() => {
+                        // Hiển thị thông báo khi copy thành công
+                        const notify = document.createElement('div');
+                        notify.textContent = 'Đã copy hình ảnh vào clipboard!';
+                        notify.style = 'position:fixed;top:24px;left:50%;transform:translateX(-50%);background:#388e3c;color:#fff;padding:12px 32px;border-radius:6px;z-index:99999;font-size:18px;box-shadow:0 2px 8px #0003;';
+                        document.body.appendChild(notify);
+                        setTimeout(() => document.body.removeChild(notify), 1800);
+                    });
                     document.body.removeChild(clone);
                 });
             });
