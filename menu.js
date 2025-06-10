@@ -1,5 +1,9 @@
+if (typeof CODE_VERSION === 'undefined') {
+    var CODE_VERSION = '2.0.2'; // ví dụ: '2.0.2'
+}
+
 // CODE_VERSION: Đổi chuỗi này mỗi lần thay đổi code để hiển thị version mới trên menu
-const CODE_VERSION = '2.0.2'; // ví dụ: '2.0.2'
+// const CODE_VERSION = '2.0.2'; // ví dụ: '2.0.2'
 
 function renderMenu(active) {
     // Xóa menu cũ nếu có
@@ -396,11 +400,12 @@ function renderMenu(active) {
         `;
         const div = document.createElement('div');
         div.innerHTML = popupHtml;
-        // Chỉ append nếu còn phần tử con
-        while (div.firstElementChild) {
-            if (div.firstElementChild) {
-                document.body.appendChild(div.firstElementChild);
-            } else {
+        // Sửa lỗi: dùng firstChild thay vì firstElementChild để tránh lỗi null
+        while (div.firstChild) {
+            try {
+                document.body.appendChild(div.firstChild);
+            } catch (e) {
+                // Ép ẩn lỗi nếu body chưa sẵn sàng hoặc có lỗi bất ngờ
                 break;
             }
         }
